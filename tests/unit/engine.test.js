@@ -133,7 +133,37 @@ test('chamadas aparecem como planejadas, sem fingir que ligou', () => {
 });
 
 test('pergunta desconhecida recebe resposta honesta', () => {
-  const r = handle(makeStore().getState(), 'Qual a previsão do tempo?', NOW);
+  const r = handle(makeStore().getState(), 'Quem ganhou o jogo do Corinthians ontem?', NOW);
   assert.equal(r.intent, 'unknown');
-  assert.match(r.reply, /modo local/);
+  assert.match(r.reply, /ainda não sei responder/);
+});
+
+test('conversa social e pedidos sobre a própria voz', () => {
+  const st = createInitialState();
+  st.settings.assistant = { gender: 'female', name: 'Clara' };
+  const now = new Date(2026, 9, 26, 10, 0);
+  const cases = {
+    'Oi Clara, tudo bem?': 'social.howareyou',
+    'como você está': 'social.howareyou',
+    'estou bem e você': 'social.fine',
+    'Clara tá me ouvindo': 'hearing',
+    'Como assim cê não consegue responder claro': 'limits',
+    'repete por favor': 'repeat',
+    'fala mais devagar': 'voice.slower',
+    'conta uma piada': 'joke',
+    'vai chover hoje?': 'weather',
+    'estou meio triste hoje': 'feeling',
+    'você é uma pessoa de verdade?': 'creator',
+    'ok': 'ack',
+  };
+  for (const [text, intent] of Object.entries(cases)) {
+    const r = handle(st, text, now);
+    assert.equal(r.intent, intent, text);
+    if (intent !== 'repeat') assert.ok(r.reply.length > 10, `${text}: resposta vazia`);
+  }
+  assert.match(handle(st, 'tudo bem?', now).reply, /obrigada/);
+  assert.match(handle(st, 'você é real?', now).reply, /não sou uma pessoa real/i);
+  // Comandos continuam com prioridade sobre a conversa social.
+  assert.equal(handle(st, 'adicione leite na lista', now).intent, 'shopping.add');
+  assert.equal(handle(st, 'me lembre de ligar para o Marcos às 15h', now).intent, 'reminder.add');
 });

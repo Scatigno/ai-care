@@ -306,8 +306,12 @@ try {
     assert.equal(await p2.evaluate(() => window.__voice.active()), false, 'despedida encerra a escuta');
     assert.equal(await p2.isVisible('.live-mic'), false);
 
-    await p2.evaluate(() => window.__aicare.store.update((d) => { d.settings.voice.wakeWord = true; }));
+    // Mãos livres direto da tela principal, com confirmação de privacidade.
+    await p2.click('.handsfree-btn');
+    await p2.click('.modal button:text-is("Ativar")');
     await p2.waitForFunction(() => window.__voice.active() && window.__voice.continuous());
+    assert.equal(await p2.getAttribute('.handsfree-btn', 'aria-pressed'), 'true');
+    assert.match(await p2.textContent('.handsfree-btn'), /diga "Clara"/);
     const before = await p2.locator('.msg').count();
     await p2.evaluate(() => window.__voice.say('vamos almoçar daqui a pouco'));
     await p2.waitForTimeout(300);
@@ -316,7 +320,7 @@ try {
     await p2.waitForSelector('.msg-assistant:has-text("Hoje é")');
     assert.match(await p2.textContent('.mic-label'), /Ouvindo|Conversando/);
     await p2.screenshot({ path: `${SHOTS}/modo-conversa.png` });
-    await p2.evaluate(() => window.__aicare.store.update((d) => { d.settings.voice.wakeWord = false; }));
+    await p2.click('.handsfree-btn');
     await p2.waitForTimeout(300);
     assert.equal(await p2.evaluate(() => window.__voice.active()), false, 'desligar a opção fecha o microfone');
     await ctx2.close();

@@ -10,7 +10,16 @@ import { claudeRuntimePresent } from '../../services/conversation/claudeProvider
 import { activeHousehold } from '../../data/schema.js';
 import { wakeLockSupported } from '../../services/wakelock.js';
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.2.1';
+
+// Pede a concordância antes de deixar o microfone ligado esperando o nome.
+export function confirmWakeWord(name) {
+  return confirmDialog({
+    title: 'Ativar mãos livres?',
+    message: `Enquanto a tela principal do AI Care estiver aberta, o microfone fica ligado o tempo todo e a assistente só responde quando ouvir "${name}". O som é processado pelo reconhecimento de fala da Apple, inclusive quando ninguém chama. Nada é gravado pelo AI Care e o aviso "Microfone ativo" fica aceso. Ative só se todas as pessoas da casa estiverem de acordo.`,
+    confirmLabel: 'Ativar',
+  });
+}
 
 export function assistantChooser(ctx, { compact = false } = {}) {
   const { assistant, avatarStyle } = ctx.store.getState().settings;
@@ -66,13 +75,9 @@ export function render(ctx) {
       toggle('set-voice', 'Ler as respostas em voz alta', s.voice.enabled, (v) => set((st) => { st.voice.enabled = v; })),
       toggle('set-conv', 'Modo conversa: continuar ouvindo depois de cada resposta', s.voice.conversationMode, (v) => set((st) => { st.voice.conversationMode = v; }),
         { hint: 'Toque no microfone uma vez e converse. Para encerrar, diga "pode parar" ou "tchau", toque de novo ou fique em silêncio.' }),
-      toggle('set-wake', `Chamar pelo nome ("${s.assistant.name || 'Clara'}, …")`, s.voice.wakeWord, async (v) => {
+      toggle('set-wake', `Mãos livres: chamar pelo nome ("${s.assistant.name || 'Clara'}, …")`, s.voice.wakeWord, async (v) => {
         if (v) {
-          const ok = await confirmDialog({
-            title: 'Ativar a escuta pelo nome?',
-            message: `Enquanto a tela principal do AI Care estiver aberta, o microfone fica ligado o tempo todo e a assistente só responde quando ouvir "${s.assistant.name || 'Clara'}". O som é processado pelo reconhecimento de fala da Apple, inclusive quando ninguém chama. Nada é gravado pelo AI Care e o aviso "Microfone ativo" fica aceso. Ative só se todas as pessoas da casa estiverem de acordo.`,
-            confirmLabel: 'Ativar',
-          });
+          const ok = await confirmWakeWord(s.assistant.name || 'Clara');
           if (!ok) { ctx.navigate('configuracoes', { focus: false }); return; }
         }
         set((st) => { st.voice.wakeWord = v; });

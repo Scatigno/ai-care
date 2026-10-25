@@ -72,6 +72,11 @@ export function mountApp(root, { store, speech }) {
     },
   };
 
+  // Libera a voz no primeiro toque (exigência do Safari no iPad).
+  for (const type of ['pointerdown', 'touchend', 'keydown']) {
+    document.addEventListener(type, () => speech.unlock?.(), { once: true, capture: true, passive: true });
+  }
+
   // ---------- Cabeçalho ----------
   const residentBtn = h('button', { type: 'button', class: 'resident-chip', onclick: () => ctx.openResidentPicker() });
   const micPill = h('span', { class: 'live-pill live-mic', hidden: true, role: 'status' }, h('span', { class: 'live-dot' }), 'Microfone ativo');

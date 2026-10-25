@@ -12,6 +12,7 @@ import { pendingShopping } from '../../domain/shopping.js';
 import { formatDateLong, formatWhen, greetingFor } from '../../core/format.js';
 import { ASSISTANT_DEFAULT_NAMES } from '../../data/schema.js';
 import { createVoiceLoop } from '../../services/voiceLoop.js';
+import { confirmWakeWord } from './settings.js';
 
 // A conversa fica só na memória da página (não é salva). Ver D-007.
 const transcript = [];
@@ -64,10 +65,13 @@ export function render(ctx) {
   const micLabel = h('span', { class: 'mic-label' }, 'Toque para falar');
   const micBtn = h('button', { type: 'button', class: 'mic-btn', 'aria-pressed': 'false', onclick: toggleMic }, icon('mic', { size: 40 }));
   const stopVoiceBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', hidden: true, onclick: () => { speech.stopSpeaking(); setMode('idle'); ui.set({ speaking: false }); loop.replyFinished(); } }, icon('stop'), h('span', {}, 'Parar a fala'));
-  const micOffBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', hidden: true, onclick: () => loop.stop() }, icon('x'), h('span', {}, 'Desligar microfone'));
+  // Mãos livres: liga a escuta pelo nome direto da tela principal.
+  const handsFreeBtn = h('button', { type: 'button', class: 'handsfree-btn', 'aria-pressed': 'false', onclick: toggleHandsFree });
+  let wakeRetryArmed = false;
 
   const loop = createVoiceLoop({
     speech,
+    maxSilentTurns: 3,
     onUtterance: (text, { wakeOnly }) => {
       input.value = '';
       if (wakeOnly) reply('Oi! Estou ouvindo.');
@@ -75,7 +79,18 @@ export function render(ctx) {
     },
     onInterim: (t) => { input.value = t; },
     onStateChange: () => renderMic(),
-    onError: (code, message) => { if (message) ctx.toast(message, { kind: 'warn', timeout: 6500 }); },
+    onError: (code, message) => {
+      // Ao abrir o app, o Safari pode recusar o microfone até o primeiro
+      // toque: tenta de novo uma vez, no próximo toque na tela.
+      if (code === 'not-allowed' && store.getState().settings.voice.wakeWord && !wakeRetryArmed) {
+        wakeRetryArmed = true;
+        wakeKey = '';
+        ctx.toast('Toque em qualquer lugar da tela para ligar o mãos livres.', { timeout: 6500 });
+        document.addEventListener('pointerdown', () => syncWakeWord(store.getState()), { once: true, capture: true });
+        return;
+      }
+      if (message) ctx.toast(message, { kind: 'warn', timeout: 6500 });
+    },
   });
 
   const log = h('ol', { class: 'chat-log', 'aria-live': 'polite', 'aria-label': 'Mensagens da conversa' });
@@ -96,7 +111,7 @@ export function render(ctx) {
           nameEl,
           statusEl,
           avatarNote),
-        h('div', { class: 'mic-wrap' }, micBtn, micLabel, stopVoiceBtn, micOffBtn)),
+        h('div', { class: 'mic-wrap' }, micBtn, micLabel, stopVoiceBtn, handsFreeBtn)),
       today),
     h('div', { class: 'chat-col' },
       h('div', { class: 'chat-head' }, h('h2', { class: 'chat-title' }, 'Conversa'), providerTag),
@@ -130,7 +145,12 @@ export function render(ctx) {
     if (conversing) micLabel.textContent = phase === 'listening' ? 'Ouvindo… toque para encerrar' : 'Conversando… toque para encerrar';
     else if (lm === 'wakeword') micLabel.textContent = `Diga "${name}" ou toque para falar`;
     else micLabel.textContent = st.settings.voice.conversationMode ? 'Toque para conversar' : 'Toque para falar';
-    micOffBtn.hidden = lm !== 'wakeword';
+    const hf = st.settings.voice.wakeWord;
+    handsFreeBtn.setAttribute('aria-pressed', String(hf));
+    handsFreeBtn.classList.toggle('is-on', hf);
+    clear(handsFreeBtn).append(
+      h('span', { class: 'handsfree-dot', 'aria-hidden': 'true' }),
+      h('span', {}, hf ? `Mãos livres ligado: diga "${name}"` : 'Ligar mãos livres (sem tocar)'));
     if (conversing && phase === 'listening') setMode('listening');
     else if (mode === 'listening') setMode(phase === 'waiting' ? 'thinking' : 'idle');
     else if (mode === 'idle') setMode('idle');
@@ -177,6 +197,11 @@ export function render(ctx) {
     const r = activeResident(store.getState());
     addMessage({ from: 'user', text, author: r ? displayName(r) : 'Você' });
     const result = respond(store, text);
+    if (result.ui?.repeat) {
+      const last = [...transcript].reverse().find((m) => m.from === 'assistant' && !m.pending && m.text);
+      reply(last ? last.text : 'Ainda não falei nada nesta conversa.');
+      return;
+    }
     if (result.ui?.open === 'sos') {
       loop.stop();
       reply(result.reply);
@@ -232,6 +257,21 @@ export function render(ctx) {
     }
     speech.stopSpeaking();
     loop.startConversation({ single: !store.getState().settings.voice.conversationMode });
+  }
+
+  async function toggleHandsFree() {
+    const st = store.getState();
+    if (st.settings.voice.wakeWord) {
+      store.update((d) => { d.settings.voice.wakeWord = false; });
+      return;
+    }
+    const availability = speech.recognitionAvailability();
+    if (!availability.ok) {
+      ctx.toast(speechMessage(availability.reason), { kind: 'warn', timeout: 6500 });
+      return;
+    }
+    if (!(await confirmWakeWord(assistantInfo(st).name))) return;
+    store.update((d) => { d.settings.voice.wakeWord = true; });
   }
 
   // Liga ou desliga a escuta pelo nome quando a configuração muda.

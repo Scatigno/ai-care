@@ -16,6 +16,14 @@ import { addMemory, memoriesFor, removeMemory, MEMORY_CATEGORIES } from '../../d
 import { emergencyContacts } from '../../domain/residents.js';
 import { logSosActivation } from '../../domain/emergency.js';
 
+const JOKES = [
+  'Por que o livro de matemática ficou triste? Porque tinha muitos problemas.',
+  'O que o tomate foi fazer no banco? Tirar extrato.',
+  'Qual é o doce preferido do átomo? Pé de molécula.',
+  'Por que a vaca foi para o espaço? Para ver a Via Láctea.',
+  'O que a impressora falou para a outra? Essa folha é sua ou é impressão minha?',
+];
+
 const HELP_TEXT = [
   'Posso anotar itens na lista de compras. Exemplo: "adicione leite e pão na lista".',
   'Posso criar lembretes. Exemplo: "me lembre de tomar água às 15h".',
@@ -235,6 +243,80 @@ const RULES = [
     run: (state) => ({ reply: `Eu sou ${state.settings.assistant.name || 'sua assistente'}, a assistente do AI Care. Estou em versão de teste.` }),
   },
   {
+    intent: 'limits',
+    test: (f) => /\b(nao (consegue|sabe|pode|quer) (me )?responder|por que (voce )?nao (responde|sabe|entende|consegue)|voce nao (entende|entendeu|sabe nada)|nao entendeu|como assim (voce|ce|cê) nao)\b/.test(f),
+    run: () => ({ reply: 'Desculpe! Nesta versão de teste eu funciono com um motor simples, sem inteligência artificial: entendo pedidos de lembretes, lista de compras, horário, data e suas preferências. Para conversar sobre qualquer assunto, preciso de um serviço de IA que ainda está sendo configurado.' }),
+  },
+  {
+    intent: 'hearing',
+    test: (f) => /\b(esta me ouvindo|ta me ouvindo|tá me ouvindo|voce me ouve|ce me ouve|me escuta|me ouviu|esta ai|ta ai|voce esta ai)\b/.test(f),
+    run: () => ({ reply: 'Estou aqui, ouvindo você. Pode falar.' }),
+  },
+  {
+    intent: 'repeat',
+    test: (f) => /\b(repete|repita|repetir|fala de novo|fale de novo|diga de novo|nao ouvi|nao entendi o que voce disse|o que voce disse)\b/.test(f),
+    run: () => ({ reply: '', ui: { repeat: true } }),
+  },
+  {
+    intent: 'voice.slower',
+    test: (f) => /\b(fal[ae] (mais )?devagar|mais devagar)\b/.test(f),
+    run: (state) => ({
+      reply: 'Combinado, vou falar mais devagar.',
+      effect: (d) => { d.settings.voice.rate = Math.max(0.7, Math.round((d.settings.voice.rate - 0.1) * 100) / 100); },
+    }),
+  },
+  {
+    intent: 'voice.faster',
+    test: (f) => /\b(fal[ae] (mais )?rapido|mais rapido)\b/.test(f),
+    run: () => ({
+      reply: 'Combinado, vou falar um pouco mais rápido.',
+      effect: (d) => { d.settings.voice.rate = Math.min(1.3, Math.round((d.settings.voice.rate + 0.1) * 100) / 100); },
+    }),
+  },
+  {
+    intent: 'weather',
+    test: (f) => /\b(como (esta|ta|vai) o tempo|previsao do tempo|vai chover|esta chovendo|clima (hoje|de hoje|agora)|qual (e )?a temperatura|esta (frio|calor) (la )?fora)\b/.test(f),
+    run: () => ({ reply: 'Ainda não tenho acesso à previsão do tempo. Por enquanto, o app Tempo do iPad mostra a previsão.' }),
+  },
+  {
+    intent: 'joke',
+    test: (f) => /\b(piada|me faca rir|me faz rir|algo engracado)\b/.test(f),
+    run: (state, text, f, now) => ({ reply: JOKES[(now.getMinutes() + now.getSeconds()) % JOKES.length] }),
+  },
+  {
+    intent: 'feeling',
+    test: (f) => /\b(estou|to|tô|me sinto|ando) (muito |meio |um pouco )?(triste|sozinh[oa]|com saudade|entediad[oa]|desanimad[oa])\b/.test(f),
+    run: () => ({ reply: 'Sinto muito que você esteja assim. Quer conversar com alguém da família? Os contatos ficam em Moradores. Se for algo urgente, toque no botão SOS.' }),
+  },
+  {
+    intent: 'creator',
+    test: (f) => /\b(quem (te )?(criou|fez|inventou)|quantos anos voce tem|voce e (uma )?(pessoa|gente|robo|humana?|de verdade|real))\b/.test(f),
+    run: (state) => ({ reply: `Sou ${state.settings.assistant.gender === 'male' ? 'um personagem virtual' : 'uma personagem virtual'} do AI Care, um projeto em teste. Não sou uma pessoa real, mas estou aqui para ajudar no dia a dia.` }),
+  },
+  {
+    intent: 'compliment',
+    test: (f) => /\b(voce e|vc e|ce e) (muito )?(linda|lindo|bonita|bonito|legal|inteligente|otima|otimo|querida|querido|um amor)\b/.test(f),
+    run: (state) => ({ reply: `${state.settings.assistant.gender === 'male' ? 'Obrigado' : 'Obrigada'}! Fico feliz em ajudar.` }),
+  },
+  {
+    intent: 'social.howareyou',
+    test: (f) => /\b(tudo bem|tudo bom|tudo certo|como (voce )?(esta|vai)|como vai voce|como ce ta|como voce ta)\b/.test(f),
+    run: (state, text, f, now) => {
+      const hello = /^(oi|ola|bom dia|boa tarde|boa noite|e ai)\b/.test(f.trim()) ? `${greetingFor(now)}${name(state) ? ', ' + name(state) : ''}! ` : '';
+      return { reply: `${hello}Estou bem, ${state.settings.assistant.gender === 'male' ? 'obrigado' : 'obrigada'} por perguntar! E você, como está?` };
+    },
+  },
+  {
+    intent: 'social.fine',
+    test: (f) => /^(estou bem|to bem|tô bem|bem e voce|bem tambem|tudo otimo|estou otim[oa]|tudo tranquilo|mais ou menos)\b/.test(f.trim()),
+    run: (state, text, f) => ({ reply: /mais ou menos/.test(f) ? 'Entendo. Se eu puder ajudar com alguma coisa, é só falar.' : 'Que bom! Posso ajudar com alguma coisa?' }),
+  },
+  {
+    intent: 'ack',
+    test: (f) => /^(ok|okay|certo|ta bom|tá bom|ta|beleza|entendi|entendido|combinado|perfeito|legal|show)[\s.!]*$/.test(f.trim()),
+    run: () => ({ reply: 'Certo! Se precisar de algo, é só falar.' }),
+  },
+  {
     intent: 'thanks',
     test: (f) => /\b(obrigad[oa]|valeu|agradeco)\b/.test(f),
     run: (state) => ({ reply: `Por nada${name(state) ? ', ' + name(state) : ''}! Estou aqui se precisar.` }),
@@ -265,7 +347,7 @@ export function handle(state, text, now = new Date()) {
   if (!rule) {
     return {
       intent: 'unknown',
-      reply: 'Ainda não sei responder isso no modo local. Posso ajudar com lembretes, lista de compras, suas preferências, horário e data. Pergunte "o que você sabe fazer" para ver exemplos.',
+      reply: 'Desculpe, ainda não sei responder isso. Nesta versão de teste eu ajudo com lembretes, lista de compras, suas preferências, horário e data. Diga "o que você sabe fazer" para ouvir exemplos.',
     };
   }
   const out = rule.run(state, original, f, now);

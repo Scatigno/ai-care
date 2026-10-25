@@ -1,6 +1,6 @@
 # Registro de progresso
 
-Última atualização: 25/10/2026 · versão 0.2.0
+Última atualização: 25/10/2026 · versão 0.2.1
 
 ## Funcionalidades concluídas
 
@@ -44,7 +44,13 @@
   carrega e volta para a ilustração em aparelhos sem WebGL. Pode ser
   desligado em Configurações. Rotulado "Personagem virtual em 3D · não é uma
   pessoa real".
-- 53 testes de unidade e 23 cenários de ponta a ponta passando.
+- v0.2.1 (após o primeiro teste no iPad): botão "Mãos livres" na tela
+  principal (chamar pelo nome sem tocar, com confirmação de privacidade);
+  voz espera o microfone fechar antes de falar e tenta de novo se não
+  começar; voz liberada no primeiro toque; conversa tolera 3 silêncios;
+  motor local responde a conversa social ("tudo bem?", "está me ouvindo?",
+  "repete", "fala mais devagar", piada, tempo, "você é real?").
+- 54 testes de unidade e 23 cenários de ponta a ponta passando.
 
 ## Em desenvolvimento
 
@@ -67,6 +73,7 @@
 | 25/10 | Resumo da rotina deixava nomes próprios em minúsculas ("marcos") | só a primeira letra do lembrete vira minúscula |
 | 25/10 | Lembrete de exemplo já vencido abria aviso por cima da configuração inicial | exemplos nascem no futuro e o agendador espera o fim da configuração |
 | 25/10 | Modo conversa parava de ouvir quando a resposta saía antes de a escuta fechar | volta a ouvir ao fim da escuta se a resposta já terminou |
+| 25/10 | No iPad, a resposta aparecia mas a fala ficava em "Pensando…" logo depois do microfone | fala espera 450 ms após fechar o microfone e tenta de novo se não começar |
 | 25/10 | Avatar 3D vinha de braços abertos (pose técnica do modelo) | braços abaixados ao carregar, com rotação no eixo do mundo |
 
 ## Problemas conhecidos

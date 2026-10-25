@@ -25,6 +25,8 @@ export function createSpeech() {
   const synth = globalThis.speechSynthesis;
   let voices = [];
   let currentRecognition = null;
+  let micClosedAt = 0; // quando a última escuta terminou
+  let unlocked = false;
 
   function loadVoices() {
     try { voices = synth ? synth.getVoices() : []; } catch { voices = []; }
@@ -87,6 +89,7 @@ export function createSpeech() {
     };
     rec.onend = () => {
       currentRecognition = null;
+      micClosedAt = Date.now();
       if (finalText.trim()) onFinal?.(finalText.trim());
       onEnd?.();
     };
@@ -112,7 +115,7 @@ export function createSpeech() {
       onEnd?.();
       return false;
     }
-    stopSpeaking();
+    const cancelled = stopSpeaking();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'pt-BR';
     utter.rate = rate;
@@ -128,22 +131,58 @@ export function createSpeech() {
     };
     const estimate = Math.min(60_000, 1500 + (text.length / 13) * (1000 / rate));
     const timer = setTimeout(finish, estimate + 2500);
-    utter.onstart = () => onStart?.();
+    let started = false;
+    utter.onstart = () => { started = true; onStart?.(); };
     // Início de cada palavra (quando o navegador informa): usado pela boca do avatar.
     utter.onboundary = (e) => { if (e.name !== 'sentence') onBoundary?.(e.charIndex); };
     utter.onend = finish;
-    utter.onerror = finish;
-    try {
-      synth.speak(utter);
-      return true;
-    } catch {
-      finish();
-      return false;
-    }
+    utter.onerror = (e) => { if (e?.error === 'interrupted' && !started) return; finish(); };
+    const go = (retry) => {
+      if (ended) return;
+      try {
+        synth.speak(utter);
+      } catch {
+        finish();
+        return;
+      }
+      // No iPad a fala às vezes não começa (sessão de áudio ainda presa ao
+      // microfone). Se não começar, tenta de novo uma vez.
+      if (retry) {
+        setTimeout(() => {
+          if (started || ended) return;
+          try { synth.cancel(); } catch { /* ignorado */ }
+          setTimeout(() => go(false), 120);
+        }, 1800);
+      }
+    };
+    // Logo depois do microfone fechar (ou de cancelar outra fala), o Safari
+    // do iPad pode engolir a fala: espera um instante antes de falar.
+    const sinceMic = Date.now() - micClosedAt;
+    const wait = currentRecognition ? 450 : Math.max(cancelled ? 120 : 0, sinceMic < 450 ? 450 - sinceMic : 0);
+    if (currentRecognition) stopListening();
+    if (wait) setTimeout(() => go(true), wait);
+    else go(true);
+    return true;
   }
 
   function stopSpeaking() {
-    try { if (synth?.speaking || synth?.pending) synth.cancel(); } catch { /* ignorado */ }
+    try {
+      if (synth?.speaking || synth?.pending) { synth.cancel(); return true; }
+    } catch { /* ignorado */ }
+    return false;
+  }
+
+  // No iPad, a voz só funciona depois de um toque na tela: no primeiro
+  // toque, fala um texto vazio para liberar a síntese para o resto da sessão.
+  function unlock() {
+    if (unlocked || !synth || !globalThis.SpeechSynthesisUtterance) return;
+    unlocked = true;
+    try {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      u.lang = 'pt-BR';
+      synth.speak(u);
+    } catch { /* ignorado */ }
   }
 
   return {
@@ -155,5 +194,6 @@ export function createSpeech() {
     stopListening,
     speak,
     stopSpeaking,
+    unlock,
   };
 }
