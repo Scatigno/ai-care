@@ -1,0 +1,17 @@
+{
+  "name": "AI Care",
+  "short_name": "AI Care",
+  "description": "Assistente residencial inteligente (versão de teste)",
+  "lang": "pt-BR",
+  "start_url": "../index.html",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EDF2F1",
+  "theme_color": "#0B6B66",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
