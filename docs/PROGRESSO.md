@@ -48,7 +48,7 @@
 
 ## Em desenvolvimento
 
-- Publicação no GitHub Pages: autorizada; aguarda a criação do repositório.
+- Publicado em https://scatigno.github.io/ai-care/ (GitHub Pages, publicação automática a cada push na `main`). Aguarda o teste no iPad.
 - Próxima prioridade: validação no iPad real (N01), comparativo de custos de
   avatar fotorrealista pago (N09), agenda semanal (N03) e contatos (N05).
 
@@ -93,7 +93,7 @@ Ver [PLANEJAMENTO.md](PLANEJAMENTO.md#próximas-tarefas-sem-custo-podem-seguir-s
 | Reconhecimento de fala do Safari (Apple) | microfone | gratuito | em uso, exige https |
 | Vozes do iPadOS | fala da assistente | gratuito | em uso |
 | Claude (claude.ai, via Artifact) | IA experimental opcional | incluso no plano do usuário | opcional, desligado por padrão |
-| Hospedagem https | microfone/câmera no iPad | gratuito (GitHub Pages) | autorizada; aguarda o repositório |
+| Hospedagem https | microfone/câmera no iPad | gratuito (GitHub Pages) | em uso: https://scatigno.github.io/ai-care/ |
 | Microsoft Rocketbox (modelos 3D) | personagem 3D | gratuito, licença MIT | em uso, embutido no app |
 | three.js | desenho 3D (WebGL) | gratuito, licença MIT | em uso, embutido no app |
 | Serviço de avatar fotorrealista em vídeo | opcional | pago | não contratado |

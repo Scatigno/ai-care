@@ -3,6 +3,8 @@
 Assistente residencial inteligente. Protótipo web (v0.2.0) para testes no
 Safari do iPad Pro 12,9" (6ª geração), com dados fictícios.
 
+**Versão publicada:** https://scatigno.github.io/ai-care/ (atualiza sozinha a cada push na `main`).
+
 > O AI Care não substitui cuidadores, profissionais de saúde nem serviços de
 > emergência. Nesta versão, o botão SOS **não envia alertas** a ninguém.
 
