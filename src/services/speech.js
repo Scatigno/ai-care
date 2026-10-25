@@ -54,7 +54,7 @@ export function createSpeech() {
     return { ok: true };
   }
 
-  function listen({ onInterim, onFinal, onStart, onEnd, onError } = {}) {
+  function listen({ onInterim, onFinal, onResult, onStart, onEnd, onError, continuous = false } = {}) {
     const availability = recognitionAvailability();
     if (!availability.ok) {
       onError?.(availability.reason, RECOGNITION_ERRORS[availability.reason]);
@@ -66,7 +66,7 @@ export function createSpeech() {
     currentRecognition = rec;
     rec.lang = 'pt-BR';
     rec.interimResults = true;
-    rec.continuous = false;
+    rec.continuous = continuous;
     rec.maxAlternatives = 1;
     let finalText = '';
     rec.onstart = () => onStart?.();
@@ -74,8 +74,10 @@ export function createSpeech() {
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const r = event.results[i];
-        if (r.isFinal) finalText += r[0].transcript;
-        else interim += r[0].transcript;
+        if (r.isFinal) {
+          finalText += r[0].transcript;
+          onResult?.(r[0].transcript.trim());
+        } else interim += r[0].transcript;
       }
       onInterim?.((finalText + ' ' + interim).trim());
     };

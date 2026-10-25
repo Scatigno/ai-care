@@ -89,6 +89,7 @@ export function openOnboarding(ctx) {
     overlay.remove();
     resetTranscript();
     ctx.navigate('inicio');
+    document.dispatchEvent(new Event('visibilitychange')); // verifica lembretes pendentes
   }
 
   renderStep();

@@ -78,6 +78,15 @@ export function buildSeed(state, now = new Date()) {
     rem('Regar as plantas', at(now, 1, 8, 30), 'weekly'),
   );
 
+  // Exemplos nunca começam vencidos: evitam um aviso logo na primeira abertura.
+  for (const r of state.reminders) {
+    while (new Date(r.dueAt) <= now) {
+      const d = new Date(r.dueAt);
+      d.setDate(d.getDate() + (r.repeat === 'weekly' ? 7 : 1));
+      r.dueAt = d.toISOString();
+    }
+  }
+
   for (const name of ['Leite', 'Pão de forma', 'Banana']) {
     state.shopping.push({ ...base, id: uid('shp'), name, done: false, addedBy: helena.id });
   }

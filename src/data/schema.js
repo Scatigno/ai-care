@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   theme: 'system', // 'system' | 'light' | 'dark'
   fontScale: 1, // 1 | 1.15 | 1.3
   assistant: { gender: null, name: '' }, // gender: 'female' | 'male'
-  voice: { enabled: true, rate: 0.95 },
+  voice: { enabled: true, rate: 0.95, conversationMode: true, wakeWord: false },
   conversationProvider: 'local', // 'local' | 'claude'
   keepAwake: false, // manter a tela ligada (Screen Wake Lock)
   onboardingDone: false,

@@ -8,6 +8,8 @@ export function startReminderScheduler(store, onDue, { intervalMs = 15_000, cloc
   store.update((d) => rollForwardStale(d, clock()));
 
   function tick() {
+    // Não interrompe a configuração inicial; avisa assim que ela terminar.
+    if (!store.getState().settings.onboardingDone) return;
     const now = clock();
     const routines = onRoutine ? dueRoutines(store.getState(), now) : [];
     if (routines.length) {

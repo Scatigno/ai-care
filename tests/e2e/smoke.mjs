@@ -259,6 +259,67 @@ try {
     }
   });
 
+  await step('modo conversa e chamada pelo nome (reconhecimento de fala simulado)', async () => {
+    const ctx2 = await browser.newContext({ viewport: VIEWPORTS['ipad-paisagem'], locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+    const p2 = await ctx2.newPage();
+    p2.on('pageerror', (e) => errors.push(`[voz] ${e.message}`));
+    await p2.addInitScript(() => {
+      const instances = [];
+      class FakeSR {
+        constructor() { this.continuous = false; instances.push(this); }
+        start() { this.active = true; setTimeout(() => this.onstart?.(), 5); }
+        stop() { if (!this.active) return; this.active = false; setTimeout(() => this.onend?.(), 5); }
+        abort() { this.stop(); }
+      }
+      window.SpeechRecognition = FakeSR;
+      const current = () => [...instances].reverse().find((i) => i.active);
+      window.__voice = {
+        active: () => Boolean(current()),
+        continuous: () => Boolean(current()?.continuous),
+        say(text) {
+          const r = current();
+          r.onresult({ resultIndex: 0, results: [Object.assign([{ transcript: text }], { isFinal: true })] });
+          if (!r.continuous) r.stop();
+        },
+      };
+    });
+    await p2.goto(BASE, { waitUntil: 'networkidle' });
+    await p2.evaluate(() => {
+      window.__aicare.store.update((d) => { d.settings.onboardingDone = true; d.settings.assistant = { gender: 'female', name: 'Clara' }; d.settings.voice.enabled = false; });
+      document.querySelector('.onboarding')?.remove();
+    });
+    await p2.click('.mic-btn');
+    await p2.waitForFunction(() => window.__voice.active());
+    assert.equal(await p2.isVisible('.live-mic'), true, 'indicador de microfone aceso');
+    await p2.evaluate(() => window.__voice.say('que horas são'));
+    await p2.waitForSelector('.msg-assistant:has-text("Agora são")');
+    await p2.waitForFunction(() => window.__voice.active(), null, { timeout: 3000 });
+    assert.equal(await p2.getAttribute('.mic-btn', 'aria-pressed'), 'true', 'continua em conversa sem novo toque');
+    await p2.evaluate(() => window.__voice.say('adicione pipoca na lista'));
+    await p2.waitForSelector('.msg-assistant:has-text("pipoca")');
+    await p2.waitForFunction(() => window.__voice.active(), null, { timeout: 3000 });
+    await p2.evaluate(() => window.__voice.say('tchau'));
+    await p2.waitForSelector('.msg-assistant:has-text("Até logo")');
+    await p2.waitForTimeout(800);
+    assert.equal(await p2.evaluate(() => window.__voice.active()), false, 'despedida encerra a escuta');
+    assert.equal(await p2.isVisible('.live-mic'), false);
+
+    await p2.evaluate(() => window.__aicare.store.update((d) => { d.settings.voice.wakeWord = true; }));
+    await p2.waitForFunction(() => window.__voice.active() && window.__voice.continuous());
+    const before = await p2.locator('.msg').count();
+    await p2.evaluate(() => window.__voice.say('vamos almoçar daqui a pouco'));
+    await p2.waitForTimeout(300);
+    assert.equal(await p2.locator('.msg').count(), before, 'conversa sem o nome é ignorada');
+    await p2.evaluate(() => window.__voice.say('Clara, que dia é hoje'));
+    await p2.waitForSelector('.msg-assistant:has-text("Hoje é")');
+    assert.match(await p2.textContent('.mic-label'), /Ouvindo|Conversando/);
+    await p2.screenshot({ path: `${SHOTS}/modo-conversa.png` });
+    await p2.evaluate(() => window.__aicare.store.update((d) => { d.settings.voice.wakeWord = false; }));
+    await p2.waitForTimeout(300);
+    assert.equal(await p2.evaluate(() => window.__voice.active()), false, 'desligar a opção fecha o microfone');
+    await ctx2.close();
+  });
+
   await step('nenhum erro de JavaScript durante o teste', async () => {
     assert.deepEqual(errors, []);
   });

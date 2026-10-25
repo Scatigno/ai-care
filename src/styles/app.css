@@ -393,6 +393,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .mic-btn.is-listening { background: var(--sos); color: var(--sos-ink); animation: mic-ring 1.3s ease-out infinite; }
 @keyframes mic-ring { 0% { box-shadow: 0 0 0 0 var(--sos-soft); } 100% { box-shadow: 0 0 0 22px transparent; } }
 .mic-label { font-weight: 700; color: var(--ink-2); }
+.mic-btn.is-session:not(.is-listening) { background: var(--accent-strong); box-shadow: 0 0 0 8px var(--accent-soft), 0 0 0 12px var(--accent); }
+.mic-btn.is-waiting-name { box-shadow: 0 0 0 8px var(--sos-soft); }
+.mic-label { text-align: center; max-width: 280px; }
 
 .today { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
 .today-clock { grid-column: 1 / -1; }

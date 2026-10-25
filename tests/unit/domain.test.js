@@ -173,3 +173,12 @@ test('rotinas: mensagem de bom dia resume lembretes e compras', () => {
   const night = addRoutine(s, { type: 'boa-noite', time: '21:00', days: [0], residentId: helena }).routine;
   assert.match(buildRoutineMessage(s, night, new Date(2026, 9, 25, 21, 0)), /Amanhã você tem um lembrete: regar as plantas às 8h30/);
 });
+
+test('dados de exemplo não trazem lembretes já vencidos', () => {
+  for (const hour of [0, 9, 10, 12, 19, 23]) {
+    const now = new Date(2026, 9, 25, hour, 30);
+    const s = createInitialState(now);
+    assert.deepEqual(dueReminders(s, now), [], `às ${hour}h30`);
+    assert.ok(s.reminders.every((r) => new Date(r.dueAt) > now));
+  }
+});

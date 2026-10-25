@@ -11,6 +11,7 @@ import { upcomingReminders } from '../../domain/reminders.js';
 import { pendingShopping } from '../../domain/shopping.js';
 import { formatDateLong, formatWhen, greetingFor } from '../../core/format.js';
 import { ASSISTANT_DEFAULT_NAMES } from '../../data/schema.js';
+import { createVoiceLoop } from '../../services/voiceLoop.js';
 
 // A conversa fica só na memória da página (não é salva). Ver D-007.
 const transcript = [];
@@ -37,14 +38,28 @@ export function render(ctx) {
   const info = assistantInfo(state);
   const avatar = createAvatar({ gender: info.gender, size: 'lg' });
   let mode = 'idle';
-  let listener = null;
   let busy = false;
+  let pausedBySpeech = false;
+  let wakeKey = '';
 
   const nameEl = h('h2', { class: 'stage-name' }, info.name);
   const statusEl = h('p', { class: 'stage-status', 'aria-live': 'polite' });
   const micLabel = h('span', { class: 'mic-label' }, 'Toque para falar');
   const micBtn = h('button', { type: 'button', class: 'mic-btn', 'aria-pressed': 'false', onclick: toggleMic }, icon('mic', { size: 40 }));
-  const stopVoiceBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', hidden: true, onclick: () => { speech.stopSpeaking(); setMode('idle'); ui.set({ speaking: false }); } }, icon('stop'), h('span', {}, 'Parar a fala'));
+  const stopVoiceBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', hidden: true, onclick: () => { speech.stopSpeaking(); setMode('idle'); ui.set({ speaking: false }); loop.replyFinished(); } }, icon('stop'), h('span', {}, 'Parar a fala'));
+  const micOffBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', hidden: true, onclick: () => loop.stop() }, icon('x'), h('span', {}, 'Desligar microfone'));
+
+  const loop = createVoiceLoop({
+    speech,
+    onUtterance: (text, { wakeOnly }) => {
+      input.value = '';
+      if (wakeOnly) reply('Oi! Estou ouvindo.');
+      else send(text);
+    },
+    onInterim: (t) => { input.value = t; },
+    onStateChange: () => renderMic(),
+    onError: (code, message) => { if (message) ctx.toast(message, { kind: 'warn', timeout: 6500 }); },
+  });
 
   const log = h('ol', { class: 'chat-log', 'aria-live': 'polite', 'aria-label': 'Mensagens da conversa' });
   const input = h('input', { id: 'chat-input', class: 'chat-input', type: 'text', name: 'mensagem', autocomplete: 'off', enterkeyhint: 'send', placeholder: 'Escreva aqui ou toque no microfone', 'aria-label': 'Mensagem para a assistente' });
@@ -64,7 +79,7 @@ export function render(ctx) {
           nameEl,
           statusEl,
           h('p', { class: 'stage-note' }, statusTag('demo', 'Avatar ilustrado provisório'))),
-        h('div', { class: 'mic-wrap' }, micBtn, micLabel, stopVoiceBtn)),
+        h('div', { class: 'mic-wrap' }, micBtn, micLabel, stopVoiceBtn, micOffBtn)),
       today),
     h('div', { class: 'chat-col' },
       h('div', { class: 'chat-head' }, h('h2', { class: 'chat-title' }, 'Conversa'), providerTag),
@@ -79,11 +94,29 @@ export function render(ctx) {
     const male = assistantInfo(store.getState()).gender === 'male';
     statusEl.textContent = next === 'idle' && male ? 'Pronto para conversar' : STATUS_TEXT[next];
     view.dataset.mode = next;
-    micBtn.classList.toggle('is-listening', next === 'listening');
-    micBtn.setAttribute('aria-pressed', String(next === 'listening'));
-    micBtn.setAttribute('aria-label', next === 'listening' ? 'Parar de ouvir' : 'Falar com a assistente');
-    micLabel.textContent = next === 'listening' ? 'Ouvindo… toque para parar' : 'Toque para falar';
     stopVoiceBtn.hidden = next !== 'speaking';
+    if (next === 'idle' && loop.mode === 'wakeword') statusEl.textContent = `Aguardando você dizer "${assistantInfo(store.getState()).name}"`;
+  }
+
+  // Botão do microfone e indicador conforme o estado da escuta.
+  function renderMic() {
+    const { mode: lm, phase } = loop;
+    const st = store.getState();
+    const name = assistantInfo(st).name;
+    ui.set({ listening: phase === 'listening' });
+    const conversing = lm === 'conversation';
+    micBtn.classList.toggle('is-listening', conversing && phase === 'listening');
+    micBtn.classList.toggle('is-session', conversing);
+    micBtn.classList.toggle('is-waiting-name', lm === 'wakeword');
+    micBtn.setAttribute('aria-pressed', String(conversing));
+    micBtn.setAttribute('aria-label', conversing ? 'Encerrar a conversa por voz' : 'Conversar por voz');
+    if (conversing) micLabel.textContent = phase === 'listening' ? 'Ouvindo… toque para encerrar' : 'Conversando… toque para encerrar';
+    else if (lm === 'wakeword') micLabel.textContent = `Diga "${name}" ou toque para falar`;
+    else micLabel.textContent = st.settings.voice.conversationMode ? 'Toque para conversar' : 'Toque para falar';
+    micOffBtn.hidden = lm !== 'wakeword';
+    if (conversing && phase === 'listening') setMode('listening');
+    else if (mode === 'listening') setMode(phase === 'waiting' ? 'thinking' : 'idle');
+    else if (mode === 'idle') setMode('idle');
   }
 
   function addMessage(msg) {
@@ -106,12 +139,18 @@ export function render(ctx) {
 
   function reply(text, extra = {}) {
     addMessage({ from: 'assistant', text, ...extra });
-    if (!store.getState().settings.voice.enabled) { setMode('idle'); return; }
+    if (!store.getState().settings.voice.enabled || !speech.supportsSynthesis) {
+      setMode('idle');
+      loop.replyFinished();
+      return;
+    }
     ctx.say(text, {
       onStart: () => setMode('speaking'),
-      onEnd: () => { if (mode === 'speaking' || mode === 'thinking') setMode('idle'); },
+      onEnd: () => {
+        if (mode === 'speaking' || mode === 'thinking') setMode('idle');
+        loop.replyFinished();
+      },
     });
-    if (!speech.supportsSynthesis) setMode('idle');
   }
 
   async function send(raw) {
@@ -122,6 +161,7 @@ export function render(ctx) {
     addMessage({ from: 'user', text, author: r ? displayName(r) : 'Você' });
     const result = respond(store, text);
     if (result.ui?.open === 'sos') {
+      loop.stop();
       reply(result.reply);
       ctx.openSos('voz', { alreadyLogged: true });
       return;
@@ -163,8 +203,8 @@ export function render(ctx) {
   }
 
   function toggleMic() {
-    if (mode === 'listening') {
-      listener?.stop();
+    if (loop.mode === 'conversation') {
+      loop.leaveConversation();
       return;
     }
     const availability = speech.recognitionAvailability();
@@ -174,17 +214,20 @@ export function render(ctx) {
       return;
     }
     speech.stopSpeaking();
-    listener = speech.listen({
-      onStart: () => { setMode('listening'); ui.set({ listening: true }); },
-      onInterim: (t) => { input.value = t; },
-      onFinal: (t) => { input.value = ''; send(t); },
-      onError: (code, message) => { if (message) ctx.toast(message, { kind: 'warn', timeout: 6500 }); },
-      onEnd: () => {
-        ui.set({ listening: false });
-        listener = null;
-        if (mode === 'listening') setMode('idle');
-      },
-    });
+    loop.startConversation({ single: !store.getState().settings.voice.conversationMode });
+  }
+
+  // Liga ou desliga a escuta pelo nome quando a configuração muda.
+  function syncWakeWord(st) {
+    const { name } = assistantInfo(st);
+    const key = st.settings.voice.wakeWord ? `on|${name}` : 'off';
+    if (key === wakeKey) return;
+    wakeKey = key;
+    if (st.settings.voice.wakeWord) {
+      if (speech.recognitionAvailability().ok && loop.mode !== 'conversation') loop.startWakeWord(name);
+    } else if (loop.base === 'wakeword' || loop.mode === 'wakeword') {
+      loop.stop();
+    }
   }
 
   function speechMessage(reason) {
@@ -234,9 +277,14 @@ export function render(ctx) {
   renderToday(state);
   renderProvider(state);
   setMode('idle');
+  renderMic();
+  syncWakeWord(state);
 
   const clock = setInterval(() => renderToday(store.getState()), 30_000);
+  // Microfone fechado enquanto a assistente fala (inclusive lembretes).
   const offUi = ui.on((s) => {
+    if (s.speaking && !pausedBySpeech) { pausedBySpeech = true; loop.pause(); }
+    else if (!s.speaking && pausedBySpeech) { pausedBySpeech = false; loop.resume(); }
     if (!s.speaking && mode === 'speaking') setMode('idle');
   });
 
@@ -249,11 +297,13 @@ export function render(ctx) {
       setMode(mode);
       renderToday(st);
       renderProvider(st);
+      syncWakeWord(st);
+      renderMic();
     },
     destroy() {
       clearInterval(clock);
       offUi();
-      listener?.stop();
+      loop.stop();
       speech.stopListening();
       speech.stopSpeaking();
       ui.set({ listening: false, speaking: false });
