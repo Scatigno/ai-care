@@ -23,6 +23,8 @@ export const FEATURES = [
   { id: 'face-id', name: 'Reconhecimento facial consentido', status: 'planned', phase: 4, detail: 'Desativado. Só será ativado com consentimento e validação.' },
   { id: 'voice-id', name: 'Reconhecimento de voz consentido', status: 'planned', phase: 4, detail: 'Desativado. Só será ativado com consentimento e validação.' },
   { id: 'reminders', name: 'Lembretes', status: 'real', phase: 5, detail: 'Avisam na tela e por voz somente enquanto o app está aberto.' },
+  { id: 'routines', name: 'Rotinas (bom dia, boa noite, mensagens)', status: 'real', phase: 5, detail: 'A assistente só fala sozinha nos horários que o morador ativar, e só com o app aberto.' },
+  { id: 'keep-awake', name: 'Manter a tela ligada', status: 'real', phase: 5, detail: 'Usa o bloqueio de tela do Safari (iPadOS 16.4 ou mais recente). Desligado por padrão.' },
   { id: 'push', name: 'Notificações com o app fechado', status: 'planned', phase: 5, dependency: 'Servidor de notificações (Web Push).' },
   { id: 'shopping', name: 'Lista de compras', status: 'real', phase: 5 },
   { id: 'sos', name: 'Botão SOS', status: 'demo', phase: 5, detail: 'Mostra os números de emergência e os contatos. Não envia alertas a ninguém nesta versão.' },

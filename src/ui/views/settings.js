@@ -7,6 +7,7 @@ import { createAvatar } from '../components/avatar.js';
 import { ASSISTANT_DEFAULT_NAMES } from '../../data/schema.js';
 import { claudeRuntimePresent } from '../../services/conversation/claudeProvider.js';
 import { activeHousehold } from '../../data/schema.js';
+import { wakeLockSupported } from '../../services/wakelock.js';
 
 export const APP_VERSION = '0.1.0';
 
@@ -63,6 +64,11 @@ export function render(ctx) {
         ? (hasPtVoice ? `Voz em uso: ${voiceName}. A voz vem do próprio aparelho; no iPad, vozes melhores podem ser baixadas em Ajustes › Acessibilidade › Conteúdo Falado › Vozes.` : 'Nenhuma voz em português foi encontrada neste aparelho. A fala pode sair com sotaque estrangeiro.')
         : 'Este navegador não oferece síntese de voz.'),
       button('Testar a voz', { iconName: 'speaker', onClick: () => ctx.say(`Olá! Eu sou ${s.assistant.gender === 'male' ? 'o' : 'a'} ${s.assistant.name || 'sua assistente'}. Esta é a minha voz.`) })),
+
+    h('section', { class: 'panel' },
+      h('h2', { class: 'panel-title' }, 'Tela'),
+      toggle('set-awake', 'Manter a tela ligada com o AI Care aberto', s.keepAwake, (v) => set((st) => { st.keepAwake = v; }),
+        { hint: wakeLockSupported() ? 'Útil para deixar o iPad na sala como central. Gasta mais bateria: deixe o iPad no carregador.' : 'Este navegador não permite manter a tela ligada.' })),
 
     h('section', { class: 'panel' },
       h('h2', { class: 'panel-title' }, 'Aparência'),
@@ -138,6 +144,9 @@ const AUDIT_LABELS = {
   'device.create': 'Dispositivo cadastrado',
   'device.delete': 'Dispositivo removido',
   'sos.activate': 'SOS acionado (teste, nada enviado)',
+  'routine.create': 'Rotina criada',
+  'routine.enable': 'Rotina ativada',
+  'routine.disable': 'Rotina desativada',
 };
 
 function showAudit(ctx) {

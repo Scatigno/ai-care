@@ -53,7 +53,10 @@ export function render(ctx) {
     viewHeader('Lembretes', {
       subtitle: 'Também dá para criar falando: "me lembre de tomar água às 15h".',
       tag: statusTag('real'),
-      actions: [button('Novo lembrete', { variant: 'primary', iconName: 'plus', onClick: () => openReminderForm(ctx) })],
+      actions: [
+        button('Rotinas', { variant: 'ghost', iconName: 'sun', onClick: () => ctx.navigate('rotinas') }),
+        button('Novo lembrete', { variant: 'primary', iconName: 'plus', onClick: () => openReminderForm(ctx) }),
+      ],
     }),
     notice('Os avisos aparecem na tela e por voz somente enquanto o AI Care estiver aberto. Avisos com o app fechado dependem de um servidor de notificações (planejado).', { kind: 'info' }),
     total

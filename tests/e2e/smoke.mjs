@@ -195,6 +195,40 @@ try {
     assert.match(row, /Não conectado/);
   });
 
+  await step('rotinas: exigem autorização e falam no horário', async () => {
+    await page.evaluate(() => window.__aicare.navigate('rotinas'));
+    assert.match(await page.textContent('.routine-list'), /Desligada/, 'exemplo nasce desligado');
+    await page.click('text=Nova rotina');
+    await page.selectOption('#rt-type', 'mensagem');
+    await page.fill('#rt-msg', 'Hora de beber água.');
+    await page.click('.modal-actions >> text=Criar rotina');
+    assert.match(await page.textContent('.modal .form-error'), /autorização/);
+    await page.check('#rt-consent');
+    await page.click('.modal-actions >> text=Criar rotina');
+    await page.waitForSelector('.routine:has-text("Mensagem personalizada")');
+    await page.click('.routine:has-text("Mensagem personalizada") >> text=Ouvir agora');
+    await page.waitForSelector('.modal-reminder:has-text("Hora de beber água.")');
+    await page.click('.modal-reminder >> text=Obrigado');
+    // Simula o horário chegando: rotina das 1 minuto atrás
+    await page.evaluate(() => window.__aicare.store.update((d) => {
+      const r = d.routines.find((x) => x.type === 'mensagem');
+      const t = new Date(Date.now() - 60_000);
+      r.time = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+      r.days = [0, 1, 2, 3, 4, 5, 6];
+    }));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForSelector('.modal-reminder:has-text("Hora de beber água.")');
+    await page.click('.modal-reminder >> text=Obrigado');
+  });
+
+  await step('manter a tela ligada liga e desliga sem erro', async () => {
+    await page.evaluate(() => window.__aicare.navigate('configuracoes'));
+    await page.click('label[for="set-awake"]');
+    assert.equal(await page.evaluate(() => window.__aicare.store.getState().settings.keepAwake), true);
+    await page.click('label[for="set-awake"]');
+    assert.equal(await page.evaluate(() => window.__aicare.store.getState().settings.keepAwake), false);
+  });
+
   await step('modo escuro pelo botão do topo', async () => {
     await page.click('.topbar .icon-btn');
     const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
@@ -216,7 +250,7 @@ try {
   await step('todas as telas sem rolagem horizontal (iPad e celular)', async () => {
     for (const [name, vp] of Object.entries(VIEWPORTS)) {
       await page.setViewportSize(vp);
-      for (const id of ['inicio', 'menu', 'moradores', 'memorias', 'lembretes', 'compras', 'cameras', 'emergencia', 'configuracoes', 'recursos']) {
+      for (const id of ['inicio', 'menu', 'moradores', 'memorias', 'lembretes', 'rotinas', 'compras', 'cameras', 'emergencia', 'configuracoes', 'recursos']) {
         await page.evaluate((v) => window.__aicare.navigate(v), id);
         const sw = await page.evaluate(() => document.documentElement.scrollWidth);
         assert.ok(sw <= vp.width, `${name}/${id}: largura ${sw} > ${vp.width}`);

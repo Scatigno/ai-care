@@ -126,3 +126,50 @@ test('registro de recursos: todo item tem status e fase válidos', () => {
   assert.equal(FEATURES.find((f) => f.id === 'sos').status, 'demo', 'SOS não pode aparecer como funcional');
   assert.equal(FEATURES.find((f) => f.id === 'face-id').status, 'planned');
 });
+
+import { addRoutine, dueRoutines, markRoutineRun, buildRoutineMessage, validateRoutine, describeDays } from '../../src/domain/routines.js';
+
+test('rotinas: exemplo nasce desligado e não dispara', () => {
+  const s = createInitialState(NOW);
+  assert.ok(s.routines.length >= 1);
+  assert.ok(s.routines.every((r) => r.enabled === false));
+  assert.deepEqual(dueRoutines(s, new Date(2026, 9, 25, 8, 5)), []);
+});
+
+test('rotinas: disparo no horário, uma vez por dia, dentro de 2 h', () => {
+  const s = createEmptyState(NOW);
+  addRoutine(s, { type: 'bom-dia', time: '08:00', days: [0, 1, 2, 3, 4, 5, 6] });
+  assert.equal(dueRoutines(s, new Date(2026, 9, 25, 7, 59)).length, 0, 'antes do horário');
+  assert.equal(dueRoutines(s, new Date(2026, 9, 25, 8, 1)).length, 1);
+  assert.equal(dueRoutines(s, new Date(2026, 9, 25, 10, 30)).length, 0, 'passou da janela de 2 h');
+  markRoutineRun(s, s.routines[0].id, new Date(2026, 9, 25, 8, 1));
+  assert.equal(dueRoutines(s, new Date(2026, 9, 25, 8, 30)).length, 0, 'já rodou hoje');
+  assert.equal(dueRoutines(s, new Date(2026, 9, 26, 8, 1)).length, 1, 'roda de novo amanhã');
+});
+
+test('rotinas: respeita os dias da semana', () => {
+  const s = createEmptyState(NOW);
+  addRoutine(s, { type: 'boa-noite', time: '21:00', days: [1, 2, 3, 4, 5] });
+  assert.equal(dueRoutines(s, new Date(2026, 9, 25, 21, 5)).length, 0, 'domingo fora');
+  assert.equal(dueRoutines(s, new Date(2026, 9, 26, 21, 5)).length, 1, 'segunda dentro');
+  assert.equal(describeDays([1, 2, 3, 4, 5]), 'Dias úteis');
+});
+
+test('rotinas: validação', () => {
+  assert.ok(validateRoutine({ type: 'bom-dia', time: '25:00', days: [1] }).time);
+  assert.ok(validateRoutine({ type: 'bom-dia', time: '08:00', days: [] }).days);
+  assert.ok(validateRoutine({ type: 'mensagem', time: '08:00', days: [1], message: '' }).message);
+  assert.deepEqual(validateRoutine({ type: 'mensagem', time: '08:00', days: [1], message: 'Beba água' }), {});
+});
+
+test('rotinas: mensagem de bom dia resume lembretes e compras', () => {
+  const s = createInitialState(new Date(2026, 9, 25, 7, 0));
+  const helena = s.session.activeResidentId;
+  const r = addRoutine(s, { type: 'bom-dia', time: '08:00', days: [0], residentId: helena }).routine;
+  const text = buildRoutineMessage(s, r, new Date(2026, 9, 25, 8, 0));
+  assert.match(text, /^Bom dia, Dona Helena! Hoje é domingo, 25 de outubro\./);
+  assert.match(text, /2 lembretes hoje: beber um copo de água às 10h e ligar para o Marcos às 18h/);
+  assert.match(text, /3 itens/);
+  const night = addRoutine(s, { type: 'boa-noite', time: '21:00', days: [0], residentId: helena }).routine;
+  assert.match(buildRoutineMessage(s, night, new Date(2026, 9, 25, 21, 0)), /Amanhã você tem um lembrete: regar as plantas às 8h30/);
+});

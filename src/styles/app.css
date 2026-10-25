@@ -568,6 +568,24 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .picker-text strong { font-size: var(--fs-2); }
 .picker-text small { color: var(--ink-2); }
 
+/* Rotinas */
+.routine-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.routine.is-off { background: transparent; border-style: dashed; }
+.routine-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.routine-time { font-family: var(--font-display); font-size: var(--fs-4); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent-strong); min-width: 3.2em; }
+.routine.is-off .routine-time { color: var(--ink-3); }
+.routine-text { flex: 1; min-width: 180px; }
+.routine-title { font-size: var(--fs-2); }
+.routine-meta { color: var(--ink-2); }
+.routine-preview { color: var(--ink-2); font-style: italic; padding: 12px 14px; background: var(--bg); border-radius: var(--radius-sm); }
+.routine-spoken { font-size: var(--fs-3); color: var(--ink); line-height: 1.4; }
+.day-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.day { position: relative; }
+.day input { position: absolute; inset: 0; opacity: 0; margin: 0; }
+.day span { display: inline-grid; place-items: center; min-width: 56px; min-height: 48px; padding: 0 10px; border-radius: 12px; border: 1.5px solid var(--line); font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.day input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.day input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+
 /* ---------- Configuração inicial ---------- */
 .onboarding { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; display: grid; place-items: center; padding: 24px 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .onboarding-card { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 20px; padding: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); }

@@ -82,6 +82,12 @@ export function buildSeed(state, now = new Date()) {
     state.shopping.push({ ...base, id: uid('shp'), name, done: false, addedBy: helena.id });
   }
 
+  // Rotina de exemplo criada desligada: só o morador pode autorizá-la.
+  state.routines.push({
+    ...base, id: uid('rot'), residentId: helena.id, type: 'bom-dia', time: '08:00',
+    days: [0, 1, 2, 3, 4, 5, 6], message: '', enabled: false, lastRunDate: null,
+  });
+
   state.devices.push({
     ...base,
     id: uid('dev'),

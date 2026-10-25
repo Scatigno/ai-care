@@ -46,9 +46,9 @@ Legenda: ✅ concluída · 🔶 parcial · ⬜ não iniciada · 🔒 depende de 
 | # | Tarefa | Depende de |
 |---|---|---|
 | N01 | Teste manual no iPad real e correções de Safari | proprietário abrir o link |
-| N02 | Rotinas personalizadas (ex.: bom dia às 8h com lembretes do dia) | T14 |
+| N02 | ✅ Rotinas autorizadas: bom dia, boa noite, mensagem personalizada | T14 |
 | N03 | Agenda/compromissos com visão semanal | T14 |
-| N04 | Modo "tela sempre ligada" (Wake Lock) para uso como central na sala | T10 |
+| N04 | ✅ Modo "tela sempre ligada" (Wake Lock) para uso como central na sala | T10 |
 | N05 | Contatos familiares com atalho de chamada (FaceTime/telefone) | T12 |
 | N06 | Mais intenções no motor local (clima sem rede: explicar; conversa social) | T08 |
 | N07 | Exportar/importar dados em arquivo | T18 |

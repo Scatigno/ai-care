@@ -4,8 +4,8 @@
 
 | Comando | O que cobre | Resultado em 25/10/2026 |
 |---|---|---|
-| `npm test` | 28 testes de unidade: interpretação de datas e horas, intenções do motor de conversa, lista de compras, lembretes (vencimento, repetição, disparo único), memórias, moradores (validação, exclusão em cascata), isolamento por residência, SOS como não enviado, migração de dados, registro de recursos | 28/28 (fuso de São Paulo e UTC) |
-| `npm run e2e` | 18 cenários no Chromium, em 1366×1024, 1024×1366 e 400×860: configuração inicial, conversa, compras, lembretes, memórias, cadastro com validação, troca de pessoa, exclusão, SOS, emergência por texto, aviso de lembrete, microfone indisponível, câmera com confirmação, dispositivo externo nunca "conectado", tema, persistência, ausência de rolagem horizontal e de erros de JavaScript | 18/18 (código-fonte e build) |
+| `npm test` | 33 testes de unidade: interpretação de datas e horas, intenções do motor de conversa, lista de compras, lembretes (vencimento, repetição, disparo único), memórias, moradores (validação, exclusão em cascata), isolamento por residência, SOS como não enviado, migração de dados, registro de recursos, rotinas (horário, janela de 2 h, dias da semana, mensagem de bom dia/boa noite) | 33/33 (fuso de São Paulo e UTC) |
+| `npm run e2e` | 20 cenários no Chromium, em 1366×1024, 1024×1366 e 400×860: configuração inicial, conversa, compras, lembretes, memórias, cadastro com validação, troca de pessoa, exclusão, SOS, emergência por texto, aviso de lembrete, microfone indisponível, câmera com confirmação, dispositivo externo nunca "conectado", rotinas com autorização e disparo no horário, manter tela ligada, tema, persistência, ausência de rolagem horizontal e de erros de JavaScript | 20/20 (código-fonte e build) |
 
 Capturas de tela do teste ficam em `test-results/`.
 

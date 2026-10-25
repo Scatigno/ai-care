@@ -26,12 +26,16 @@
   de conversa, ver dados (JSON), auditoria, restaurar exemplos, apagar tudo.
 - Tela "O que já funciona" com funcional/demonstração/planejado.
 - Build para Artifact (arquivo único) e para hospedagem PWA.
-- 28 testes de unidade e 18 cenários de ponta a ponta passando.
+- Rotinas autorizadas pelo morador: bom dia (lembretes do dia e compras),
+  boa noite (lembretes de amanhã) e mensagem personalizada, com dias da semana,
+  autorização obrigatória e exemplo que nasce desligado.
+- Opção "Manter a tela ligada" (Screen Wake Lock), desligada por padrão.
+- 33 testes de unidade e 20 cenários de ponta a ponta passando.
 
 ## Em desenvolvimento
 
-- Nada em andamento. Próxima prioridade: validação no iPad real (N01) e
-  rotinas personalizadas (N02).
+- Nada em andamento. Próxima prioridade: validação no iPad real (N01),
+  agenda semanal (N03) e contatos com atalho de chamada (N05).
 
 ## Problemas encontrados e corrigidos
 
@@ -45,6 +49,7 @@
 | 25/10 | Cartões do resumo esticavam na vertical no iPad em retrato | `align-content: start` |
 | 25/10 | Dados do cadastro quebravam palavras ("Desativad a") | fatos em linhas rótulo/valor |
 | 25/10 | Status dizia "Pronta" para o assistente masculino | texto conforme o gênero |
+| 25/10 | Resumo da rotina deixava nomes próprios em minúsculas ("marcos") | só a primeira letra do lembrete vira minúscula |
 
 ## Problemas conhecidos
 

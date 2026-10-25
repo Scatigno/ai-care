@@ -18,6 +18,8 @@ Safari do iPad Pro 12,9" (6ª geração), com dados fictícios.
 | Moradores, familiares e visitantes; memória individual | Funcional (dados no navegador) |
 | Lembretes com aviso na tela e por voz | Funcional com o app aberto |
 | Lista de compras | Funcional |
+| Rotinas de bom dia, boa noite e mensagens, autorizadas pelo morador | Funcional com o app aberto |
+| Manter a tela ligada (iPad como central na sala) | Funcional (iPadOS 16.4+) |
 | Teste da câmera frontal (sem gravação nem análise) | Funcional, exige https |
 | Avatar | Demonstração: ilustração animada provisória |
 | Botão SOS | Demonstração: mostra números e contatos, não envia nada |

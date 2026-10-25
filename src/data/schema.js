@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   assistant: { gender: null, name: '' }, // gender: 'female' | 'male'
   voice: { enabled: true, rate: 0.95 },
   conversationProvider: 'local', // 'local' | 'claude'
+  keepAwake: false, // manter a tela ligada (Screen Wake Lock)
   onboardingDone: false,
 });
 
@@ -33,6 +34,7 @@ export function createEmptyState(now = new Date()) {
     reminders: [],
     shopping: [],
     devices: [],
+    routines: [],
     alerts: [],
     identificationLog: [],
     audit: [],
@@ -58,7 +60,7 @@ export function migrate(raw) {
     assistant: { ...DEFAULT_SETTINGS.assistant, ...(raw.settings?.assistant || {}) },
     voice: { ...DEFAULT_SETTINGS.voice, ...(raw.settings?.voice || {}) },
   };
-  for (const key of ['residents', 'memories', 'reminders', 'shopping', 'devices', 'alerts', 'identificationLog', 'audit']) {
+  for (const key of ['residents', 'memories', 'reminders', 'shopping', 'devices', 'routines', 'alerts', 'identificationLog', 'audit']) {
     if (!Array.isArray(state[key])) state[key] = [];
   }
   state.schemaVersion = SCHEMA_VERSION;

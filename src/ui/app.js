@@ -9,6 +9,8 @@ import { startReminderScheduler } from '../services/scheduler.js';
 import { openSos } from './views/emergency.js';
 import { openResidentPicker } from './views/residents.js';
 import { showReminderAlert } from './views/reminders.js';
+import { showRoutine } from './views/routines.js';
+import { setKeepAwake } from '../services/wakelock.js';
 import { openOnboarding } from './views/onboarding.js';
 import { toast } from './components/overlay.js';
 import { createEmptyState } from '../data/schema.js';
@@ -147,10 +149,17 @@ export function mountApp(root, { store, speech }) {
   }
 
   let lastSettings = null;
+  let keepAwake = null;
+  function syncKeepAwake(on) {
+    if (on === keepAwake) return;
+    keepAwake = on;
+    setKeepAwake(on).then((r) => { if (on && !r.ok) toast(r.message, { kind: 'warn', timeout: 6000 }); });
+  }
   store.subscribe((state) => {
     if (state.settings !== lastSettings) {
       applyAppearance(state.settings);
       lastSettings = state.settings;
+      syncKeepAwake(state.settings.keepAwake);
     }
     refreshHeader();
     rerender();
@@ -172,7 +181,8 @@ export function mountApp(root, { store, speech }) {
     if (id && id !== currentId && findView(id)) navigate(id);
   });
 
-  startReminderScheduler(store, (reminder) => showReminderAlert(ctx, reminder));
+  startReminderScheduler(store, (reminder) => showReminderAlert(ctx, reminder), { onRoutine: (routine) => showRoutine(ctx, routine) });
+  syncKeepAwake(store.getState().settings.keepAwake);
 
   if (!store.getState().settings.onboardingDone) openOnboarding(ctx);
 

@@ -11,6 +11,7 @@ import * as cameras from './cameras.js';
 import * as emergency from './emergency.js';
 import * as settings from './settings.js';
 import * as features from './features.js';
+import * as routines from './routines.js';
 
 // compact: aparece também na barra inferior (telas estreitas)
 export const VIEWS = [
@@ -22,6 +23,7 @@ export const VIEWS = [
   { id: 'compras', title: 'Lista de compras', navLabel: 'Compras', icon: 'cart', nav: true, module: shopping },
   { id: 'cameras', title: 'Câmeras', icon: 'camera', nav: true, module: cameras },
   { id: 'emergencia', title: 'Emergência', icon: 'sos', nav: false, parent: 'menu', module: emergency },
+  { id: 'rotinas', title: 'Rotinas', icon: 'sun', nav: false, parent: 'menu', module: routines },
   { id: 'recursos', title: 'Recursos', icon: 'info', nav: false, parent: 'menu', module: features },
   { id: 'configuracoes', title: 'Configurações', navLabel: 'Ajustes', icon: 'gear', nav: true, compact: true, module: settings },
 ];

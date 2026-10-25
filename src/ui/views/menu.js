@@ -7,6 +7,7 @@ import { feature } from '../../data/features.js';
 const TILES = [
   { view: 'inicio', icon: 'chat', title: 'Conversar', text: 'Fale ou escreva com a assistente.', feature: 'text-chat' },
   { view: 'lembretes', icon: 'bell', title: 'Lembretes', text: 'Horários, remédios e compromissos.', feature: 'reminders' },
+  { view: 'rotinas', icon: 'sun', title: 'Rotinas', text: 'Bom dia, boa noite e mensagens no horário.', feature: 'routines' },
   { view: 'compras', icon: 'cart', title: 'Lista de compras', text: 'Anote o que está faltando.', feature: 'shopping' },
   { view: 'moradores', icon: 'users', title: 'Moradores', text: 'Moradores, familiares e visitantes.', feature: 'residents' },
   { view: 'memorias', icon: 'brain', title: 'Memórias', text: 'Preferências e rotinas de cada pessoa.', feature: 'memory' },
