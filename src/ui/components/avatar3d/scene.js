@@ -15,8 +15,27 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { buildTimeline, sampleTimeline, timeAtChar, VISEMES } from '../../../services/lipsync.js';
 
 export const MODELS = {
-  female: { id: 'f002', label: 'Rocketbox Female_Adult_02' },
+  female: { id: 'f008', label: 'Rocketbox Female_Adult_08 (visual Clara)', look: 'clara' },
   male: { id: 'm014', label: 'Rocketbox Male_Adult_08' },
+};
+
+// Ajustes de visual aplicados por cima do modelo, em centímetros no espaço
+// do mundo com o modelo em pose de repouso. Personagem original no estilo
+// pedido pelo proprietário (cabelo escuro com pontas acobreadas, óculos,
+// gola alta preta); as texturas vêm de scripts/avatar/style_f008.py.
+const LOOKS = {
+  clara: {
+    // Cor do cabelo por altura: raiz escura, pontas acobreadas.
+    hair: { top: 166, bottom: 141, root: [0.13, 0.075, 0.06], tip: [0.78, 0.25, 0.08] },
+    // Pescoço abaixo desta altura vira a gola alta da blusa.
+    collar: { below: 149.6, fade: 0.7, color: 0x111113, lift: 0.45 },
+    glasses: {
+      x: 3.2, y: 160.9, z: 6.45, w: 4.6, h: 3.5, rim: 0.34, wrap: 0.17,
+      earX: 8.3, earY: 161.0, earZ: -3.5, color: 0x3c121a,
+    },
+    // Luz de recorte em duas cores (verde-azulada à esquerda, âmbar à direita).
+    rim: [0x5fd6c8, 0xff8a3d],
+  },
 };
 
 const VISEME_MORPH = {
@@ -99,6 +118,151 @@ async function loadModel(base, id, maxAniso) {
   return { root, meshes };
 }
 
+// Posição de cada vértice já deformada pelo esqueleto, no mundo (cm).
+function worldVertices(mesh) {
+  mesh.updateMatrixWorld(true);
+  mesh.skeleton?.update();
+  const n = mesh.geometry.attributes.position.count;
+  const out = new Float32Array(n * 3);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    if (mesh.isSkinnedMesh) mesh.getVertexPosition(i, v); else v.fromBufferAttribute(mesh.geometry.attributes.position, i);
+    v.applyMatrix4(mesh.matrixWorld);
+    v.toArray(out, i * 3);
+  }
+  return out;
+}
+
+const smooth = (a, b, x) => { const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+// Cabelo: cor por vértice (a textura é em tons de cinza).
+function tintHair(mesh, hair) {
+  const p = worldVertices(mesh);
+  const n = p.length / 3;
+  const col = new Float32Array(n * 3);
+  const root = new THREE.Color().setRGB(...hair.root);
+  const tip = new THREE.Color().setRGB(...hair.tip);
+  const c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    c.copy(root).lerp(tip, smooth(hair.top, hair.bottom, p[i * 3 + 1]) ** 1.3);
+    c.toArray(col, i * 3);
+  }
+  mesh.geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  for (const m of [].concat(mesh.material)) { m.vertexColors = true; m.needsUpdate = true; }
+}
+
+// Gola alta: pinta de malha preta o pescoço abaixo do queixo e o afasta um
+// pouco da pele, para ter volume.
+function addCollar(mesh, collar) {
+  const p = worldVertices(mesh);
+  const pos = mesh.geometry.attributes.position;
+  const n = pos.count;
+  const mask = new Float32Array(n);
+  let any = false;
+  for (let i = 0; i < n; i++) {
+    mask[i] = 1 - smooth(collar.below - collar.fade, collar.below, p[i * 3 + 1]);
+    any ||= mask[i] > 0;
+  }
+  if (!any) return;
+  // Escala entre o espaço do objeto (modelo quantizado) e centímetros.
+  const a = new THREE.Vector3().fromBufferAttribute(pos, 0);
+  let k = 1;
+  for (let i = 1; i < n; i++) {
+    const b = new THREE.Vector3().fromBufferAttribute(pos, i);
+    const dObj = a.distanceTo(b);
+    if (dObj > 1e-4) {
+      const dW = Math.hypot(p[i * 3] - p[0], p[i * 3 + 1] - p[1], p[i * 3 + 2] - p[2]);
+      if (dW > 5) { k = dW / dObj; break; }
+    }
+  }
+  mesh.geometry.setAttribute('collar', new THREE.BufferAttribute(mask, 1));
+  const color = new THREE.Color(collar.color);
+  for (const m of [].concat(mesh.material)) {
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.collarColor = { value: color };
+      sh.uniforms.collarLift = { value: collar.lift / k };
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float collar;\nvarying float vCollar;\nuniform float collarLift;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCollar = collar;\ntransformed += normalize(objectNormal) * collar * collarLift;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vCollar;\nuniform vec3 collarColor;')
+        .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, collarColor * (0.8 + 0.4 * dot(diffuseColor.rgb, vec3(0.3, 0.6, 0.1))), vCollar);')
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.8, vCollar);');
+    };
+    m.customProgramCacheKey = () => 'collar';
+    m.needsUpdate = true;
+  }
+}
+
+// Óculos de acetato vinho, presos ao osso da cabeça.
+function makeGlasses(g) {
+  const group = new THREE.Group();
+  group.name = 'glasses';
+  const frameMat = new THREE.MeshPhysicalMaterial({ color: g.color, roughness: 0.38, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.3 });
+  const lensMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.1, depthWrite: false, envMapIntensity: 1.6,
+  });
+  // Contorno levemente "gatinho": topo reto e mais alto por fora, base arredondada.
+  const shape = (w, h, rt, rb, lift) => {
+    const s = new THREE.Shape();
+    const x0 = -w / 2, x1 = w / 2, y0 = -h / 2, y1 = h / 2;
+    s.moveTo(x0 + rb, y0);
+    s.lineTo(x1 - rb, y0);
+    s.quadraticCurveTo(x1, y0, x1, y0 + rb);
+    s.lineTo(x1, y1 - rt + lift);
+    s.quadraticCurveTo(x1, y1 + lift, x1 - rt, y1 + lift * 0.7);
+    s.lineTo(x0 + rt, y1);
+    s.quadraticCurveTo(x0, y1, x0, y1 - rt);
+    s.lineTo(x0, y0 + rb);
+    s.quadraticCurveTo(x0, y0, x0 + rb, y0);
+    return s;
+  };
+  for (const side of [1, -1]) {
+    const lens = new THREE.Group();
+    const inner = shape(g.w, g.h, 0.8, 1.7, 0.2);
+    const outer = shape(g.w + g.rim * 2, g.h + g.rim * 2, 0.8 + g.rim, 1.7 + g.rim, 0.35);
+    outer.holes.push(inner);
+    const frame = new THREE.Mesh(new THREE.ExtrudeGeometry(outer, {
+      depth: 0.32, bevelEnabled: true, bevelThickness: 0.07, bevelSize: 0.07, bevelSegments: 2, curveSegments: 12,
+    }), frameMat);
+    const glass = new THREE.Mesh(new THREE.ShapeGeometry(inner, 12), lensMat);
+    glass.position.z = 0.16;
+    glass.renderOrder = 2;
+    lens.add(frame, glass);
+    if (side < 0) lens.scale.x = -1; // espelha o formato para o outro olho
+    lens.position.set(side * g.x, g.y, g.z);
+    lens.rotation.y = side * g.wrap;
+    group.add(lens);
+  }
+  const tube = (pts, r) => new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))), 24, r, 8, false), frameMat);
+  const innerX = g.x - g.w / 2 - g.rim * 0.6;
+  // Ponte sobre o nariz.
+  group.add(tube([[-innerX, g.y + 0.55, g.z + 0.12], [0, g.y + 0.95, g.z + 0.3], [innerX, g.y + 0.55, g.z + 0.12]], 0.2));
+  // Hastes até as orelhas.
+  const outX = g.x + (g.w / 2 + g.rim) * Math.cos(g.wrap);
+  const outZ = g.z - (g.w / 2 + g.rim) * Math.sin(g.wrap) + 0.15;
+  for (const side of [1, -1]) {
+    group.add(tube([
+      [side * (outX - 0.1), g.y + 0.9, outZ], [side * (g.earX - 0.25), g.y + 0.7, outZ - 3.5],
+      [side * g.earX, g.earY, g.earZ], [side * (g.earX - 0.6), g.earY - 1.4, g.earZ - 1.8],
+    ], 0.17));
+  }
+  return group;
+}
+
+function applyLook(model, look, head) {
+  if (!look) return;
+  for (const m of model.meshes) {
+    const names = [].concat(m.material).map((x) => x.name).join(' ');
+    if (look.hair && /opacity/.test(names)) tintHair(m, look.hair);
+    if (look.collar && /head/.test(names)) addCollar(m, look.collar);
+  }
+  if (look.glasses && head) {
+    model.root.updateMatrixWorld(true);
+    head.attach(makeGlasses(look.glasses));
+  }
+}
+
 // Gira um osso em torno de um eixo do mundo (independe da orientação local).
 function rotateWorld(bone, axis, angle) {
   bone.updateWorldMatrix(true, false);
@@ -133,7 +297,10 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
   const key = new THREE.DirectionalLight(0xfff1e6, 2.1);
   const fill = new THREE.DirectionalLight(0xe6f0ff, 0.7);
   const rim = new THREE.DirectionalLight(0xffffff, 1.4);
-  scene.add(key, fill, rim, new THREE.HemisphereLight(0xffffff, 0x8a7a70, 0.35));
+  // Recortes coloridos atrás da personagem (só nos visuais que pedem).
+  const rimL = new THREE.DirectionalLight(0xffffff, 0);
+  const rimR = new THREE.DirectionalLight(0xffffff, 0);
+  scene.add(key, fill, rim, rimL, rimR, new THREE.HemisphereLight(0xffffff, 0x8a7a70, 0.35));
 
   const camera = new THREE.PerspectiveCamera(18, 1, 1, 2000);
 
@@ -151,7 +318,7 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
   const anim = {
     blinkAt: 0, blink: 0, blinking: 0,
     gaze: new THREE.Vector2(), gazeTarget: new THREE.Vector2(), gazeAt: 0,
-    brow: 0, smile: 0.12, tilt: 0, nod: 0,
+    brow: 0, smile: 0.26, tilt: 0, nod: 0,
     weights: {},
   };
 
@@ -169,7 +336,8 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
   }
 
   async function mount(g) {
-    const { id } = MODELS[g] || MODELS.female;
+    const { id, look: lookName } = MODELS[g] || MODELS.female;
+    const look = LOOKS[lookName];
     const next = await loadModel(base, id, renderer.capabilities.getMaxAnisotropy());
     if (destroyed) return;
     if (model) {
@@ -191,6 +359,13 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
       'AK_19_EyeSquintLeft', 'AK_20_EyeSquintRight', 'AK_25_JawOpen'];
     for (const n of names) rig.morph[n] = morphIndex(n);
 
+    applyLook(model, look, rig.head);
+    rimL.color.set(look?.rim?.[0] ?? 0xffffff);
+    rimR.color.set(look?.rim?.[1] ?? 0xffffff);
+    rimL.intensity = look?.rim ? 2.6 : 0;
+    rimR.intensity = look?.rim ? 3.2 : 0;
+    rim.intensity = look?.rim ? 0.6 : 1.4;
+    el.dataset.look = lookName || '';
     relaxPose();
     for (const b of ['head', 'neck', 'spine', 'lEye', 'rEye']) if (rig[b]) rig[b].userData.rest = rig[b].quaternion.clone();
     frame();
@@ -228,8 +403,9 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
     key.position.set(target.x - 60, target.y + 80, target.z + 120);
     fill.position.set(target.x + 90, target.y + 10, target.z + 80);
     rim.position.set(target.x + 40, target.y + 60, target.z - 120);
-    key.target.position.copy(target); fill.target.position.copy(target); rim.target.position.copy(target);
-    scene.add(key.target, fill.target, rim.target);
+    rimL.position.set(target.x - 110, target.y + 30, target.z - 70);
+    rimR.position.set(target.x + 110, target.y + 10, target.z - 60);
+    for (const l of [key, fill, rim, rimL, rimR]) { l.target.position.copy(target); scene.add(l.target); }
     renderer.setSize(w, hgt, false);
   }
 
@@ -271,7 +447,7 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
     const thinking = state === 'thinking';
     const speaking = state === 'speaking' || Boolean(speech);
     anim.brow = damp(anim.brow, listening ? 0.35 : thinking ? 0.25 : speaking ? 0.04 + mouthOpen * 0.1 : 0, 6, dt);
-    anim.smile = damp(anim.smile, listening ? 0.28 : speaking ? 0.16 : 0.2, 3, dt);
+    anim.smile = damp(anim.smile, listening ? 0.32 : speaking ? 0.18 : 0.26, 3, dt);
     anim.tilt = damp(anim.tilt, listening ? 0.07 : 0, 3, dt);
     setMorph('AK_03_BrowInnerUp', anim.brow);
     setMorph('AK_04_BrowOuterUpLeft', anim.brow * 0.5);
@@ -356,7 +532,7 @@ export async function createAvatar3D({ gender = 'female', base = 'public/avatars
     },
     stopSpeaking() { speech = null; },
     // Para testes: pesos atuais dos visemas e se há fala em curso.
-    debug() { return { speaking: Boolean(speech), weights: { ...anim.weights } }; },
+    debug() { return { speaking: Boolean(speech), weights: { ...anim.weights }, glasses: Boolean(model?.root.getObjectByName('glasses')) }; },
     destroy() {
       destroyed = true;
       cancelAnimationFrame(raf);

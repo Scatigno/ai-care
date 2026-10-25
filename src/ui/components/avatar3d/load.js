@@ -6,7 +6,7 @@
 const BUNDLED = typeof __AICARE_BUNDLED__ !== 'undefined';
 
 export const AVATAR_BASE = BUNDLED ? 'public/avatars/' : '/public/avatars/';
-export const PORTRAIT = { female: `${AVATAR_BASE}f002/portrait.webp`, male: `${AVATAR_BASE}m014/portrait.webp` };
+export const PORTRAIT = { female: `${AVATAR_BASE}f008/portrait.webp`, male: `${AVATAR_BASE}m014/portrait.webp` };
 
 let pending = null;
 

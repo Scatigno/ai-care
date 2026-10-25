@@ -53,9 +53,10 @@ Legenda: ✅ concluída · 🔶 parcial · ⬜ não iniciada · 🔒 depende de 
 | N06 | Mais intenções no motor local (clima sem rede: explicar; conversa social) | T08 |
 | N07 | Exportar/importar dados em arquivo | T18 |
 | N08 | Especificação da API e do backend (Fase 7) | — |
-| N09 | Estudo comparativo de serviços de avatar realista e voz neural, com custo por cliente | — |
+| N09 | ✅ Estudo comparativo de serviços de avatar realista, com custo por cliente ([AVATAR-REALISTA.md](AVATAR-REALISTA.md)) | — |
 | N10 | ✅ Modo conversa por voz e chamada pelo nome | T09 |
 | N11 | ✅ Personagem 3D realista gratuito com sincronização labial | T07 |
+| N12 | ✅ Visual "Clara" no estilo da referência do proprietário (óculos, gola alta, cabelo acobreado, fundo escuro) | N11 |
 
 ## Tarefas que precisam de autorização
 
@@ -63,7 +64,7 @@ Legenda: ✅ concluída · 🔶 parcial · ⬜ não iniciada · 🔒 depende de 
 |---|---|
 | Hospedar `dist/web` em https (GitHub Pages ou similar) | publica o app; necessário para microfone e câmera no iPad |
 | Repositório no GitHub | o proprietário precisa criar e informar o nome |
-| Avatar realista e voz neural | serviço pago |
+| Avatar realista e voz neural | serviço pago; recomendação: prova de conceito Simli (50 min grátis/mês) com rosto original |
 | IA generativa em produção | serviço pago por uso |
 | Envio real de alertas (SMS, WhatsApp, push) | serviço pago e risco à segurança de pessoas |
 | Biometria | dado sensível; exige consentimento, validação e termo |

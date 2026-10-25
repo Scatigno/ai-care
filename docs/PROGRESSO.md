@@ -1,6 +1,6 @@
 # Registro de progresso
 
-Última atualização: 25/10/2026 · versão 0.2.1
+Última atualização: 25/10/2026 · versão 0.2.2
 
 ## Funcionalidades concluídas
 
@@ -50,6 +50,13 @@
   começar; voz liberada no primeiro toque; conversa tolera 3 silêncios;
   motor local responde a conversa social ("tudo bem?", "está me ouvindo?",
   "repete", "fala mais devagar", piada, tempo, "você é real?").
+- Visual "Clara" (v0.2.2), pedido pelo proprietário a partir de uma imagem de
+  referência: nova base Rocketbox Female_Adult_08 com cabelo longo escuro e
+  pontas acobreadas, óculos vinho modelados no app, blusa preta de gola alta
+  e mangas compridas, olhos castanhos, batom e sorriso suave; fundo de estúdio
+  escuro com luz de recorte verde-azulada e âmbar. Personagem original no
+  estilo da referência, sem copiar o rosto (ver [AVATAR-REALISTA.md](AVATAR-REALISTA.md)).
+- Comparativo de avatares fotorrealistas com custo por cliente (N09).
 - 54 testes de unidade e 23 cenários de ponta a ponta passando.
 
 ## Em desenvolvimento
@@ -103,7 +110,7 @@ Ver [PLANEJAMENTO.md](PLANEJAMENTO.md#próximas-tarefas-sem-custo-podem-seguir-s
 | Hospedagem https | microfone/câmera no iPad | gratuito (GitHub Pages) | em uso: https://scatigno.github.io/ai-care/ |
 | Microsoft Rocketbox (modelos 3D) | personagem 3D | gratuito, licença MIT | em uso, embutido no app |
 | three.js | desenho 3D (WebGL) | gratuito, licença MIT | em uso, embutido no app |
-| Serviço de avatar fotorrealista em vídeo | opcional | pago | não contratado |
+| Serviço de avatar fotorrealista em vídeo | opcional | pago (Simli ≈ US$ 0,01/min; outros US$ 0,08–0,35/min) | não contratado; comparativo em AVATAR-REALISTA.md |
 | Voz neural / STT em nuvem | Fase 2 | pago | não contratado |
 | SMS/WhatsApp/push | alertas da Fase 5 | pago | não contratado |
 | Backend + banco | Fase 7 | pago | não contratado |

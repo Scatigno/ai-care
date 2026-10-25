@@ -1,6 +1,6 @@
 # AI Care
 
-Assistente residencial inteligente. Protótipo web (v0.2.0) para testes no
+Assistente residencial inteligente. Protótipo web (v0.2.2) para testes no
 Safari do iPad Pro 12,9" (6ª geração), com dados fictícios.
 
 **Versão publicada:** https://scatigno.github.io/ai-care/ (atualiza sozinha a cada push na `main`).

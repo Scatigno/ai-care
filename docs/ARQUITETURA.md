@@ -72,7 +72,7 @@ A conversa fica só em memória (máx. 60 mensagens) e some ao fechar o app.
 |---|---|---|
 | `core/storage` | localStorage | API REST/GraphQL com autenticação |
 | `conversation/claudeProvider` | `window.claude` do Artifact | backend próprio com LLM e controle de custo por cliente |
-| `components/avatar3d` + `services/lipsync` | personagem 3D (three.js, Rocketbox) com visemas calculados do texto | avatar fotorrealista em vídeo (serviço externo) ou visemas vindos do áudio da voz neural |
+| `components/avatar3d` + `services/lipsync` | personagem 3D (three.js, Rocketbox) com visemas calculados do texto e visuais por personagem (`LOOKS` em scene.js: cor do cabelo, gola, óculos, luz) | avatar fotorrealista em vídeo (serviço externo) ou visemas vindos do áudio da voz neural |
 | `components/avatar` | SVG ilustrado (reserva sem WebGL) | — |
 | `services/speech` | Web Speech API | STT/TTS em nuvem com voz neural pt-BR |
 | `domain/devices` | cadastro sem conexão | central local (RTSP/ONVIF → WebRTC/HLS) |

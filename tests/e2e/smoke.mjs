@@ -354,6 +354,7 @@ try {
     });
     await p3.waitForSelector('.avatar3d[data-ready]', { timeout: 30000 });
     assert.equal(await p3.getAttribute('.avatar3d', 'data-gender'), 'female');
+    assert.equal(await p3.getAttribute('.avatar3d', 'data-look'), 'clara', 'assistente feminina com o visual Clara (óculos, gola alta)');
     assert.match(await p3.textContent('.stage-note'), /não é uma pessoa real/);
     await p3.fill('#chat-input', 'que horas são');
     await p3.click('.composer-send');
@@ -365,6 +366,7 @@ try {
       maxOpen = Math.max(maxOpen, ...Object.values(w));
     }
     assert.ok(maxOpen > 0.3, `boca se mexe durante a fala (máx ${maxOpen.toFixed(2)})`);
+    assert.ok(await p3.evaluate(() => document.querySelector('.avatar-host').avatarApi.debug().glasses), 'óculos presos à cabeça');
     await p3.screenshot({ path: `${SHOTS}/avatar3d-falando.png` });
     await p3.waitForSelector('.assistant[data-mode="idle"]', { timeout: 10000 });
     await p3.waitForTimeout(400);
