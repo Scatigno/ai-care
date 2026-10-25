@@ -10,7 +10,7 @@ import { claudeRuntimePresent } from '../../services/conversation/claudeProvider
 import { activeHousehold } from '../../data/schema.js';
 import { wakeLockSupported } from '../../services/wakelock.js';
 
-export const APP_VERSION = '0.2.1';
+export const APP_VERSION = '0.2.2';
 
 // Pede a concordância antes de deixar o microfone ligado esperando o nome.
 export function confirmWakeWord(name) {

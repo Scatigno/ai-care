@@ -1,6 +1,6 @@
 {
   "name": "ai-care",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "AI Care — assistente residencial inteligente (protótipo web)",
   "scripts": {
     "test": "node --test tests/unit/*.test.js",

@@ -4,7 +4,7 @@
 // Uso: npm run build
 
 import { build } from 'esbuild';
-import { mkdir, readFile, writeFile, cp, rm } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile, cp, rm } from 'node:fs/promises';
 
 const root = new URL('..', import.meta.url).pathname;
 const FONTS = 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;600;700&display=swap';
@@ -59,7 +59,7 @@ await writeFile(`${root}dist/artifact/ai-care.html`, artifact);
 // Arquivos de apoio do Artifact (publicados ao lado da página).
 await writeFile(`${root}dist/artifact/avatar3d.js`, avatarJs);
 await cp(`${root}public/avatars`, `${root}dist/artifact/public/avatars`, { recursive: true });
-for (const id of ['f002', 'm014']) {
+for (const id of (await readdir(`${root}public/avatars`, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name)) {
   const dir = `${root}dist/artifact/public/avatars/${id}`;
   const glb = await readFile(`${dir}/model.glb`);
   await writeFile(`${dir}/model.glb.json`, JSON.stringify({ b64: glb.toString('base64') }));

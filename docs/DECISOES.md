@@ -102,3 +102,19 @@ aparência é de personagem de jogo, não de vídeo; o rótulo deixa claro que �
 um personagem virtual. Avatar fotorrealista em vídeo continua planejado e só
 será contratado com autorização (N09).
 
+## D-014 · Visual "Clara" no estilo da referência, sem copiar o rosto (25/10/2026)
+O proprietário enviou uma imagem gerada no CapCut AI e pediu a assistente
+"desse jeito".
+**Decisão:** trocar a base feminina pelo Rocketbox Female_Adult_08 (cabelo
+longo) e recriar o estilo: cabelo escuro com pontas acobreadas (cor por
+vértice sobre textura em tons de cinza), óculos vinho gerados em three.js e
+presos ao osso da cabeça, gola alta preta (pescoço abaixo do queixo pintado de
+malha e levemente afastado da pele no shader), texturas ajustadas por
+`scripts/avatar/style_f008.py`, fundo escuro e luz de recorte em duas cores.
+O rosto da referência não é copiado: a origem da imagem não permite saber se
+é uma pessoa real, e o uso comercial dependeria de autorização dela e dos
+termos do CapCut.
+**Consequência:** sem custo e sem serviço externo. Avatar fotorrealista em
+vídeo exige um rosto original com licença comercial e um serviço pago
+(comparativo em `docs/AVATAR-REALISTA.md`).
+

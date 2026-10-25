@@ -1,9 +1,11 @@
 # Avatares 3D: Microsoft Rocketbox
 
-Os modelos em `f002/` (Female_Adult_02) e `m014/` (Male_Adult_08) vêm da
+Os modelos em `f008/` (Female_Adult_08) e `m014/` (Male_Adult_08) vêm da
 biblioteca Microsoft Rocketbox (https://github.com/microsoft/Microsoft-Rocketbox),
-convertidos para GLB com texturas reduzidas (ver `scripts/avatar/`). São
-personagens criados por computador, não pessoas reais.
+convertidos para GLB com texturas reduzidas (ver `scripts/avatar/`). Em
+`f008/` as texturas foram modificadas (blusa preta, batom, olhos castanhos,
+cabelo em tons de cinza para receber cor no app). São personagens criados
+por computador, não pessoas reais.
 
 MIT License
 
