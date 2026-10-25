@@ -1,7 +1,7 @@
 // Tela principal: avatar, microfone e conversa.
 
 import { h, clear, icon } from '../../core/dom.js';
-import { createAvatar } from '../components/avatar.js';
+import { createAssistantAvatar } from '../components/assistantAvatar.js';
 import { statusTag } from '../components/common.js';
 import { respond, ENGINE_EXAMPLES } from '../../services/conversation/engine.js';
 import { askClaude, claudeRuntimePresent } from '../../services/conversation/claudeProvider.js';
@@ -36,8 +36,25 @@ export function render(ctx) {
   const { store, speech, ui } = ctx;
   const state = store.getState();
   const info = assistantInfo(state);
-  const avatar = createAvatar({ gender: info.gender, size: 'lg' });
   let mode = 'idle';
+  let avatarStyle = state.settings.avatarStyle;
+  let avatar = makeAvatar(info.gender);
+  const avatarNote = h('p', { class: 'stage-note' });
+
+  function makeAvatar(gender) {
+    const a = createAssistantAvatar({
+      gender,
+      prefer3d: avatarStyle === '3d',
+      onFallback: () => renderAvatarNote(),
+    });
+    a.setState(mode);
+    return a;
+  }
+
+  function renderAvatarNote() {
+    clear(avatarNote);
+    avatarNote.append(statusTag('kind', avatar.mode === 'svg' ? 'Avatar ilustrado' : 'Personagem virtual em 3D · não é uma pessoa real'));
+  }
   let busy = false;
   let pausedBySpeech = false;
   let wakeKey = '';
@@ -74,11 +91,11 @@ export function render(ctx) {
   const view = h('section', { class: 'assistant' },
     h('div', { class: 'stage-col' },
       h('div', { class: 'stage-card' },
-        avatar.el,
+        h('div', { class: 'avatar-slot' }, avatar.el),
         h('div', { class: 'stage-caption' },
           nameEl,
           statusEl,
-          h('p', { class: 'stage-note' }, statusTag('demo', 'Avatar ilustrado provisório'))),
+          avatarNote),
         h('div', { class: 'mic-wrap' }, micBtn, micLabel, stopVoiceBtn, micOffBtn)),
       today),
     h('div', { class: 'chat-col' },
@@ -90,7 +107,7 @@ export function render(ctx) {
 
   function setMode(next) {
     mode = next;
-    avatar.setState(next === 'thinking' ? 'idle' : next);
+    avatar.setState(next);
     const male = assistantInfo(store.getState()).gender === 'male';
     statusEl.textContent = next === 'idle' && male ? 'Pronto para conversar' : STATUS_TEXT[next];
     view.dataset.mode = next;
@@ -280,6 +297,14 @@ export function render(ctx) {
   renderMic();
   syncWakeWord(state);
 
+  // Boca do avatar acompanha a fala (respostas, lembretes, rotinas).
+  const offSpeech = ctx.onSpeech((ev) => {
+    if (ev.type === 'start') avatar.speak(ev.text, { rate: ev.rate });
+    else if (ev.type === 'boundary') avatar.boundary(ev.ci);
+    else avatar.stopSpeaking();
+  });
+  renderAvatarNote();
+
   const clock = setInterval(() => renderToday(store.getState()), 30_000);
   // Microfone fechado enquanto a assistente fala (inclusive lembretes).
   const offUi = ui.on((s) => {
@@ -291,8 +316,16 @@ export function render(ctx) {
   refs = {
     update(st) {
       const i = assistantInfo(st);
+      if (st.settings.avatarStyle !== avatarStyle) {
+        avatarStyle = st.settings.avatarStyle;
+        const old = avatar;
+        avatar = makeAvatar(i.gender);
+        old.el.replaceWith(avatar.el);
+        old.destroy();
+        renderAvatarNote();
+      }
       avatar.setGender(i.gender);
-      avatar.setState(mode === 'thinking' ? 'idle' : mode);
+      avatar.setState(mode);
       nameEl.textContent = i.name;
       setMode(mode);
       renderToday(st);
@@ -307,6 +340,7 @@ export function render(ctx) {
       speech.stopListening();
       speech.stopSpeaking();
       ui.set({ listening: false, speaking: false });
+      offSpeech();
       avatar.destroy();
     },
   };

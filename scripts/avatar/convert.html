@@ -1,0 +1,48 @@
+<!doctype html><meta charset=utf-8>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+const KEEP = [
+  'AA_VI_00_Sil','AA_VI_01_PP','AA_VI_02_FF','AA_VI_03_TH','AA_VI_04_DD','AA_VI_05_KK','AA_VI_06_CH','AA_VI_07_SS',
+  'AA_VI_08_nn','AA_VI_09_RR','AA_VI_10_aa','AA_VI_11_E','AA_VI_12_I','AA_VI_13_O','AA_VI_14_U',
+  'AK_03_BrowInnerUp','AK_04_BrowOuterUpLeft','AK_05_BrowOuterUpRight',
+  'AK_09_EyeBlinkLeft','AK_10_EyeBlinkRight','AK_19_EyeSquintLeft','AK_20_EyeSquintRight',
+  'AK_25_JawOpen','AK_44_MouthSmileLeft','AK_45_MouthSmileRight','AK_28_MouthDimpleLeft','AK_29_MouthDimpleRight',
+];
+window.convert = async (url) => {
+  const mgr = new THREE.LoadingManager();
+  mgr.setURLModifier((u) => (/\.tga$/i.test(u) ? 'data:,' : u));
+  const obj = await new FBXLoader(mgr).loadAsync(url);
+  obj.animations = [];
+  const report = {};
+  obj.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry;
+    const dict = o.morphTargetDictionary;
+    const names = Object.keys(dict);
+    const pos = [];
+    const newDict = {};
+    for (const k of KEEP) {
+      const full = names.find((n) => n.endsWith('.' + k));
+      if (full === undefined) continue;
+      newDict[k] = pos.length;
+      pos.push(g.morphAttributes.position[dict[full]]);
+    }
+    // Zera deltas minúsculos (ajuda a compressão)
+    for (const a of pos) for (let i = 0; i < a.array.length; i++) if (Math.abs(a.array[i]) < 1e-3) a.array[i] = 0;
+    g.morphAttributes = { position: pos };
+    o.morphTargetDictionary = newDict;
+    o.morphTargetInfluences = new Array(pos.length).fill(0);
+    g.deleteAttribute('color');
+    o.material = [].concat(o.material).map((m) => new THREE.MeshStandardMaterial({ name: m.name, transparent: /opacity/.test(m.name) }));
+    report[o.name] = { kept: Object.keys(newDict), attrs: Object.keys(g.attributes) };
+  });
+  const glb = await new GLTFExporter().parseAsync(obj, { binary: true, animations: [] });
+  const bytes = new Uint8Array(glb);
+  let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return { report, b64: btoa(s) };
+};
+window.ready = true;
+</script>

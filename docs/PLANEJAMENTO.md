@@ -54,6 +54,8 @@ Legenda: ✅ concluída · 🔶 parcial · ⬜ não iniciada · 🔒 depende de 
 | N07 | Exportar/importar dados em arquivo | T18 |
 | N08 | Especificação da API e do backend (Fase 7) | — |
 | N09 | Estudo comparativo de serviços de avatar realista e voz neural, com custo por cliente | — |
+| N10 | ✅ Modo conversa por voz e chamada pelo nome | T09 |
+| N11 | ✅ Personagem 3D realista gratuito com sincronização labial | T07 |
 
 ## Tarefas que precisam de autorização
 

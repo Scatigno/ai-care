@@ -4,17 +4,21 @@ import { h } from '../../core/dom.js';
 import { button, notice, segmented, statusTag, toggle, viewHeader } from '../components/common.js';
 import { confirmDialog, openModal } from '../components/overlay.js';
 import { createAvatar } from '../components/avatar.js';
+import { PORTRAIT } from '../components/avatar3d/load.js';
 import { ASSISTANT_DEFAULT_NAMES } from '../../data/schema.js';
 import { claudeRuntimePresent } from '../../services/conversation/claudeProvider.js';
 import { activeHousehold } from '../../data/schema.js';
 import { wakeLockSupported } from '../../services/wakelock.js';
 
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.2.0';
 
 export function assistantChooser(ctx, { compact = false } = {}) {
-  const { assistant } = ctx.store.getState().settings;
+  const { assistant, avatarStyle } = ctx.store.getState().settings;
   const option = (gender, label) => {
-    const av = createAvatar({ gender, size: 'sm' });
+    // Retrato do personagem 3D (imagem leve) ou a ilustração animada.
+    const av = avatarStyle === 'illustrated'
+      ? createAvatar({ gender, size: 'sm' })
+      : { el: h('img', { class: 'avatar-portrait', src: PORTRAIT[gender], alt: '', width: 150, height: 188 }) };
     const selected = assistant.gender === gender;
     return h('button', {
       type: 'button', class: `assistant-option${selected ? ' is-selected' : ''}`, 'aria-pressed': String(selected),
@@ -53,7 +57,9 @@ export function render(ctx) {
     h('section', { class: 'panel' },
       h('h2', { class: 'panel-title' }, 'Assistente'),
       assistantChooser(ctx),
-      h('div', { class: 'field' }, h('label', { class: 'field-label', for: 'set-name' }, 'Nome da assistente'), nameInput)),
+      h('div', { class: 'field' }, h('label', { class: 'field-label', for: 'set-name' }, 'Nome da assistente'), nameInput),
+      toggle('set-avatar3d', 'Personagem 3D realista', s.avatarStyle !== 'illustrated', (v) => set((st) => { st.avatarStyle = v ? '3d' : 'illustrated'; }),
+        { hint: 'Rosto em 3D que pisca e mexe a boca junto com a fala. É um personagem virtual, não uma pessoa real. Desligado, usa a ilustração simples, que gasta menos bateria.' })),
 
     h('section', { class: 'panel' },
       h('h2', { class: 'panel-title' }, 'Voz'),

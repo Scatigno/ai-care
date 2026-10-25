@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   voice: { enabled: true, rate: 0.95, conversationMode: true, wakeWord: false },
   conversationProvider: 'local', // 'local' | 'claude'
   keepAwake: false, // manter a tela ligada (Screen Wake Lock)
+  avatarStyle: '3d', // '3d' (personagem 3D) ou 'illustrated' (ilustração leve)
   onboardingDone: false,
 });
 

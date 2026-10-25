@@ -43,7 +43,7 @@ export function openOnboarding(ctx) {
         h('h1', { id: 'ob-title', class: 'ob-title' }, 'Escolha sua assistente'),
         h('p', { class: 'ob-lead' }, 'Você pode trocar quando quiser em Configurações.'),
         assistantChooser(ctx),
-        h('p', { class: 'fine center' }, statusTag('demo', 'Avatar ilustrado provisório'), ' O avatar humano realista está planejado e dependerá de um serviço externo.'),
+        h('p', { class: 'fine center' }, statusTag('kind', 'Personagens virtuais'), ' Rostos em 3D criados por computador. Não são pessoas reais.'),
         s.assistant.gender ? h('div', { class: 'field ob-name' }, h('label', { class: 'field-label', for: 'ob-name' }, 'Como quer chamar?'), nameInput) : null,
         h('div', { class: 'ob-actions' },
           button('Voltar', { onClick: () => { step = 0; renderStep(); } }),

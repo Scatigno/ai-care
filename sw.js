@@ -1,6 +1,6 @@
 // Service worker do AI Care: guarda os arquivos do app para abrir sem
 // internet. Não guarda dados de moradores (esses ficam no localStorage).
-const CACHE = 'aicare-v0.1.0';
+const CACHE = 'aicare-v0.2.0';
 const ASSETS = ['./', './index.html', './app.js', './app.css', './public/manifest.webmanifest', './public/icon.svg', './public/icon-180.png'];
 
 self.addEventListener('install', (event) => {

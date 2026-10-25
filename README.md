@@ -1,6 +1,6 @@
 # AI Care
 
-Assistente residencial inteligente. Protótipo web (v0.1.0) para testes no
+Assistente residencial inteligente. Protótipo web (v0.2.0) para testes no
 Safari do iPad Pro 12,9" (6ª geração), com dados fictícios.
 
 > O AI Care não substitui cuidadores, profissionais de saúde nem serviços de
@@ -15,16 +15,17 @@ Safari do iPad Pro 12,9" (6ª geração), com dados fictícios.
 | Conversa por texto (motor local por regras, em português) | Funcional |
 | Fala da assistente (vozes do aparelho) | Funcional |
 | Microfone (reconhecimento de fala do Safari) | Funcional, exige https |
+| Modo conversa (um toque e conversa à vontade) e chamada pelo nome (opcional) | Funcional, exige https |
 | Moradores, familiares e visitantes; memória individual | Funcional (dados no navegador) |
 | Lembretes com aviso na tela e por voz | Funcional com o app aberto |
 | Lista de compras | Funcional |
 | Rotinas de bom dia, boa noite e mensagens, autorizadas pelo morador | Funcional com o app aberto |
 | Manter a tela ligada (iPad como central na sala) | Funcional (iPadOS 16.4+) |
 | Teste da câmera frontal (sem gravação nem análise) | Funcional, exige https |
-| Avatar | Demonstração: ilustração animada provisória |
+| Personagem 3D realista que pisca e mexe a boca com a fala (Microsoft Rocketbox, MIT) | Funcional; volta à ilustração sem WebGL |
 | Botão SOS | Demonstração: mostra números e contatos, não envia nada |
 | Conversa com IA generativa (Claude) | Demonstração opcional, só no Artifact |
-| Avatar realista, biometria, câmeras IP, alertas, SaaS | Planejado |
+| Avatar fotorrealista em vídeo (pago), biometria, câmeras IP, alertas, SaaS | Planejado |
 
 A lista completa fica em `src/data/features.js` e aparece no app em
 **Menu › O que já funciona**.
@@ -34,7 +35,7 @@ A lista completa fica em `src/data/features.js` e aparece no app em
 Requer Node.js 18 ou mais recente.
 
 ```bash
-npm install          # instala o esbuild (única dependência, só para build)
+npm install          # instala esbuild e three.js (o three vai embutido no build)
 npm run serve        # abre o código-fonte em http://localhost:5173
 npm test             # testes de unidade
 npm run build        # gera dist/web (PWA) e dist/artifact (arquivo único)
@@ -83,3 +84,10 @@ docs/                 arquitetura, planejamento, decisões, progresso e testes
 - [Decisões técnicas](docs/DECISOES.md)
 - [Registro de progresso](docs/PROGRESSO.md)
 - [Testes](docs/TESTES.md)
+
+## Créditos
+
+- Personagens 3D: [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox),
+  licença MIT (ver `public/avatars/LICENSE-Rocketbox.md`). São personagens
+  criados por computador, não pessoas reais.
+- Desenho 3D: [three.js](https://threejs.org), licença MIT.

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Avatar lab</title>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/examples/jsm/":"/node_modules/three/examples/jsm/"}}</script>
+<style>body{margin:0;background:#EEF3F2;font:16px system-ui}body.clear{background:transparent}body.clear #stage{background:none}#stage{width:400px;height:500px;background:radial-gradient(#fff,#dfe9e7)}.avatar3d,.avatar3d canvas{width:100%;height:100%;display:block}</style>
+<div id="stage"></div>
+<script type="module">
+import { createAvatar3D } from '/src/ui/components/avatar3d/scene.js';
+const q = new URLSearchParams(location.search); if (q.has('clear')) document.body.classList.add('clear');
+window.avatar = await createAvatar3D({ gender: q.get('g') || 'female', still: q.has('still'), base: '/public/avatars/', container: document.getElementById('stage') });
+window.ready = true;
+</script>

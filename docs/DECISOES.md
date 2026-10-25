@@ -28,7 +28,7 @@ pago (ex.: provedores de avatar em tempo real) ou de modelo próprio.
 durante a fala, rotulada como "Avatar ilustrado provisório".
 **Consequência:** a experiência pode ser testada sem custo. A escolha do
 serviço realista fica para a Fase 2, com estimativa de custo por cliente antes
-de contratar.
+de contratar. *Substituída em parte pela D-013.*
 
 ## D-005 · Motor de conversa local por regras (25/10/2026)
 **Decisão:** intenções em português por regras (compras, lembretes, memória,
@@ -78,3 +78,27 @@ do sistema.
 público) e uma pasta `dist/web` pronta para hospedagem com https.
 **Consequência:** o proprietário testa no iPad sem publicar nada. Microfone e
 câmera só funcionarão quando ele autorizar uma hospedagem https.
+
+## D-012 · Conversa por voz contínua e chamada pelo nome (25/10/2026)
+O proprietário pediu para não precisar apertar o botão a cada frase.
+**Decisão:** modo conversa ligado por padrão (um toque abre uma conversa que
+continua até despedida, toque ou silêncio) e chamada pelo nome opcional,
+desligada por padrão, com aviso de privacidade antes de ligar. O microfone
+nunca fica aberto enquanto a assistente fala.
+**Consequência:** com a chamada pelo nome ligada, o áudio da sala passa pelo
+reconhecimento de fala da Apple mesmo quando ninguém chama; por isso exige
+confirmação e mantém o indicador "Microfone ativo" aceso.
+
+## D-013 · Personagem 3D gratuito antes de avatar pago (25/10/2026)
+O proprietário escolheu "3D realista gratuito primeiro".
+**Decisão:** usar modelos Microsoft Rocketbox (licença MIT), que já trazem
+formas faciais de fala (visemas), piscar e expressões, desenhados com
+three.js no próprio iPad. A boca é calculada do texto em português e
+reajustada a cada palavra anunciada pela voz do Safari. Ready Player Me foi
+descartado (serviço encerrado). Modelos convertidos para GLB compacto
+(meshopt) com só 27 formas faciais; ferramentas em `scripts/avatar/`.
+**Consequência:** sem custo e sem enviar nada para fora do aparelho. A
+aparência é de personagem de jogo, não de vídeo; o rótulo deixa claro que é
+um personagem virtual. Avatar fotorrealista em vídeo continua planejado e só
+será contratado com autorização (N09).
+

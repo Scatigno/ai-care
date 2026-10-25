@@ -1,6 +1,6 @@
 {
   "name": "ai-care",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI Care — assistente residencial inteligente (protótipo web)",
   "scripts": {
     "test": "node --test tests/unit/*.test.js",
@@ -11,7 +11,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "esbuild": "^0.24.2"
+    "esbuild": "^0.24.2",
+    "three": "^0.169.0"
   },
   "type": "module"
 }

@@ -35,6 +35,10 @@ export function mountApp(root, { store, speech }) {
   let currentId = null;
   let currentEl = null;
 
+  // Quem quiser acompanhar a fala (o avatar mexe a boca) se inscreve aqui.
+  const speechListeners = new Set();
+  const emitSpeech = (ev) => speechListeners.forEach((fn) => fn(ev));
+
   const ctx = {
     store,
     speech,
@@ -57,9 +61,14 @@ export function mountApp(root, { store, speech }) {
       speech.speak(text, {
         gender: assistant.gender || 'female',
         rate: voice.rate,
-        onStart: () => { ui.set({ speaking: true }); onStart?.(); },
-        onEnd: () => { ui.set({ speaking: false }); onEnd?.(); },
+        onStart: () => { ui.set({ speaking: true }); emitSpeech({ type: 'start', text, rate: voice.rate }); onStart?.(); },
+        onBoundary: (ci) => emitSpeech({ type: 'boundary', ci }),
+        onEnd: () => { ui.set({ speaking: false }); emitSpeech({ type: 'end' }); onEnd?.(); },
       });
+    },
+    onSpeech(fn) {
+      speechListeners.add(fn);
+      return () => speechListeners.delete(fn);
     },
   };
 

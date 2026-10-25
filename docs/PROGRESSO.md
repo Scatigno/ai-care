@@ -1,13 +1,13 @@
 # Registro de progresso
 
-Última atualização: 25/10/2026 · versão 0.1.0
+Última atualização: 25/10/2026 · versão 0.2.0
 
 ## Funcionalidades concluídas
 
 - Tela inicial com identidade AI Care e configuração inicial em 3 passos.
 - Escolha entre assistente feminina (Clara) e masculino (Rafael), com nome
   personalizável e troca em Configurações.
-- Tela principal com avatar ilustrado animado, conversa, microfone grande,
+- Tela principal com avatar, conversa, microfone grande,
   sugestões de comandos, hora, próximo lembrete e lista de compras.
 - Botão SOS sempre visível no topo, com painel honesto (nada é enviado).
 - Menu de funcionalidades com o status de cada uma.
@@ -30,12 +30,27 @@
   boa noite (lembretes de amanhã) e mensagem personalizada, com dias da semana,
   autorização obrigatória e exemplo que nasce desligado.
 - Opção "Manter a tela ligada" (Screen Wake Lock), desligada por padrão.
-- 33 testes de unidade e 20 cenários de ponta a ponta passando.
+- Modo conversa por voz: um toque no microfone e a assistente ouve, responde
+  e volta a ouvir sozinha; encerra com "pode parar"/"tchau", novo toque ou
+  dois silêncios seguidos. O microfone fecha enquanto ela fala.
+- Chamada pelo nome ("Clara, …"), opcional e desligada por padrão, com aviso
+  de privacidade antes de ligar e indicador "Microfone ativo" aceso.
+- Personagem 3D realista (v0.2.0): modelos Microsoft Rocketbox (MIT), uma
+  mulher e um homem, com pele, cabelo e roupas texturizados; pisca, respira,
+  mexe a cabeça e o olhar, muda a expressão ao ouvir e ao pensar, e mexe a
+  boca junto com a fala (15 visemas calculados do texto em português e
+  reajustados a cada palavra que o Safari anuncia). Carrega sob demanda
+  (≈ 0,6 MB de código + ≈ 1,1 MB por personagem), mostra um retrato enquanto
+  carrega e volta para a ilustração em aparelhos sem WebGL. Pode ser
+  desligado em Configurações. Rotulado "Personagem virtual em 3D · não é uma
+  pessoa real".
+- 53 testes de unidade e 23 cenários de ponta a ponta passando.
 
 ## Em desenvolvimento
 
-- Nada em andamento. Próxima prioridade: validação no iPad real (N01),
-  agenda semanal (N03) e contatos com atalho de chamada (N05).
+- Publicação no GitHub Pages: autorizada; aguarda a criação do repositório.
+- Próxima prioridade: validação no iPad real (N01), comparativo de custos de
+  avatar fotorrealista pago (N09), agenda semanal (N03) e contatos (N05).
 
 ## Problemas encontrados e corrigidos
 
@@ -50,6 +65,9 @@
 | 25/10 | Dados do cadastro quebravam palavras ("Desativad a") | fatos em linhas rótulo/valor |
 | 25/10 | Status dizia "Pronta" para o assistente masculino | texto conforme o gênero |
 | 25/10 | Resumo da rotina deixava nomes próprios em minúsculas ("marcos") | só a primeira letra do lembrete vira minúscula |
+| 25/10 | Lembrete de exemplo já vencido abria aviso por cima da configuração inicial | exemplos nascem no futuro e o agendador espera o fim da configuração |
+| 25/10 | Modo conversa parava de ouvir quando a resposta saía antes de a escuta fechar | volta a ouvir ao fim da escuta se a resposta já terminou |
+| 25/10 | Avatar 3D vinha de braços abertos (pose técnica do modelo) | braços abaixados ao carregar, com rotação no eixo do mundo |
 
 ## Problemas conhecidos
 
@@ -58,6 +76,10 @@
 - Lembretes não avisam com o app fechado ou com o iPad bloqueado.
 - A qualidade da voz depende das vozes instaladas no iPad.
 - Ainda não testado no Safari/WebKit real.
+- A boca do avatar 3D é sincronizada pelo texto, não pelo áudio: pode
+  adiantar ou atrasar um pouco quando a voz do iPad muda de ritmo.
+- O avatar 3D é realista, mas não fotorrealista (qualidade de jogo, não de
+  vídeo). Fotorrealismo exige serviço pago (ver N09).
 
 ## Próximas tarefas
 
@@ -71,8 +93,10 @@ Ver [PLANEJAMENTO.md](PLANEJAMENTO.md#próximas-tarefas-sem-custo-podem-seguir-s
 | Reconhecimento de fala do Safari (Apple) | microfone | gratuito | em uso, exige https |
 | Vozes do iPadOS | fala da assistente | gratuito | em uso |
 | Claude (claude.ai, via Artifact) | IA experimental opcional | incluso no plano do usuário | opcional, desligado por padrão |
-| Hospedagem https | microfone/câmera no iPad | gratuito (GitHub Pages) | aguarda autorização |
-| Serviço de avatar realista | Fase 2 | pago | não contratado |
+| Hospedagem https | microfone/câmera no iPad | gratuito (GitHub Pages) | autorizada; aguarda o repositório |
+| Microsoft Rocketbox (modelos 3D) | personagem 3D | gratuito, licença MIT | em uso, embutido no app |
+| three.js | desenho 3D (WebGL) | gratuito, licença MIT | em uso, embutido no app |
+| Serviço de avatar fotorrealista em vídeo | opcional | pago | não contratado |
 | Voz neural / STT em nuvem | Fase 2 | pago | não contratado |
 | SMS/WhatsApp/push | alertas da Fase 5 | pago | não contratado |
 | Backend + banco | Fase 7 | pago | não contratado |

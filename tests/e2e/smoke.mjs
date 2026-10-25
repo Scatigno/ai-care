@@ -36,7 +36,8 @@ async function step(name, fn) {
 const server = spawn(process.execPath, [`${root}scripts/serve.mjs`, `${root}${target}`, String(PORT)], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 600));
 await mkdir(SHOTS, { recursive: true });
-const browser = await chromium.launch();
+// WebGL por software, para o avatar 3D funcionar sem placa de vídeo.
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 
 try {
   const context = await browser.newContext({ viewport: VIEWPORTS['ipad-paisagem'], hasTouch: true, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
@@ -60,7 +61,8 @@ try {
     await page.click('text=Começar a usar');
     assert.ok(!(await page.isVisible('.onboarding')));
     assert.equal(await page.textContent('.stage-name'), 'Rafael');
-    assert.equal(await page.getAttribute('.avatar-stage', 'data-gender'), 'male');
+    await page.waitForSelector('.avatar-host[data-avatar="3d"] .avatar3d[data-ready]', { timeout: 30000 });
+    assert.equal(await page.getAttribute('.avatar3d', 'data-gender'), 'male');
     assert.match(await page.textContent('.chat-log'), /Eu sou o Rafael/);
   });
 
@@ -318,6 +320,83 @@ try {
     await p2.waitForTimeout(300);
     assert.equal(await p2.evaluate(() => window.__voice.active()), false, 'desligar a opção fecha o microfone');
     await ctx2.close();
+  });
+
+  await step('avatar 3D: mexe a boca junto com a fala e troca de modelo', async () => {
+    const ctx3 = await browser.newContext({ viewport: VIEWPORTS['ipad-retrato'], locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+    const p3 = await ctx3.newPage();
+    p3.on('pageerror', (e) => errors.push(`[avatar] ${e.message}`));
+    // Voz simulada: começa, avisa cada palavra e termina, como o Safari.
+    await p3.addInitScript(() => {
+      const fake = {
+        speaking: false, pending: false,
+        getVoices: () => [],
+        cancel() { this.speaking = false; },
+        speak(u) {
+          this.speaking = true;
+          setTimeout(() => u.onstart?.(), 10);
+          const words = [...u.text.matchAll(/\S+/g)];
+          words.forEach((m, i) => setTimeout(() => u.onboundary?.({ name: 'word', charIndex: m.index }), 30 + i * 260));
+          setTimeout(() => { this.speaking = false; u.onend?.(); }, 60 + words.length * 260);
+        },
+        addEventListener() {}, removeEventListener() {},
+      };
+      Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+    });
+    await p3.goto(BASE, { waitUntil: 'networkidle' });
+    await p3.evaluate(() => {
+      window.__aicare.store.update((d) => { d.settings.onboardingDone = true; d.settings.assistant = { gender: 'female', name: 'Clara' }; });
+      document.querySelector('.onboarding')?.remove();
+    });
+    await p3.waitForSelector('.avatar3d[data-ready]', { timeout: 30000 });
+    assert.equal(await p3.getAttribute('.avatar3d', 'data-gender'), 'female');
+    assert.match(await p3.textContent('.stage-note'), /não é uma pessoa real/);
+    await p3.fill('#chat-input', 'que horas são');
+    await p3.click('.composer-send');
+    await p3.waitForSelector('.assistant[data-mode="speaking"]');
+    let maxOpen = 0;
+    for (let i = 0; i < 12; i++) {
+      await p3.waitForTimeout(80);
+      const w = await p3.evaluate(() => document.querySelector('.avatar-host').avatarApi.debug().weights);
+      maxOpen = Math.max(maxOpen, ...Object.values(w));
+    }
+    assert.ok(maxOpen > 0.3, `boca se mexe durante a fala (máx ${maxOpen.toFixed(2)})`);
+    await p3.screenshot({ path: `${SHOTS}/avatar3d-falando.png` });
+    await p3.waitForSelector('.assistant[data-mode="idle"]', { timeout: 10000 });
+    await p3.waitForTimeout(400);
+    const after = await p3.evaluate(() => document.querySelector('.avatar-host').avatarApi.debug());
+    assert.equal(after.speaking, false);
+    assert.ok(Math.max(0, ...Object.values(after.weights)) < 0.1, 'boca fecha quando a fala termina');
+
+    // Trocar para masculino troca o modelo sem recarregar.
+    await p3.evaluate(() => window.__aicare.store.update((d) => { d.settings.assistant = { gender: 'male', name: 'Rafael' }; }));
+    await p3.waitForSelector('.avatar3d[data-gender="male"]', { timeout: 30000 });
+
+    // Desligar o 3D volta para a ilustração.
+    await p3.evaluate(() => window.__aicare.navigate('configuracoes'));
+    await p3.click('label[for="set-avatar3d"]');
+    await p3.evaluate(() => window.__aicare.navigate('inicio'));
+    await p3.waitForSelector('.avatar-host[data-avatar="svg"] .avatar-stage');
+    assert.equal(await p3.locator('.avatar3d').count(), 0);
+    await ctx3.close();
+  });
+
+  await step('sem WebGL, usa a ilustração sem erro', async () => {
+    const ctx4 = await browser.newContext({ viewport: VIEWPORTS.celular, locale: 'pt-BR', timezoneId: 'America/Sao_Paulo' });
+    const p4 = await ctx4.newPage();
+    p4.on('pageerror', (e) => errors.push(`[sem webgl] ${e.message}`));
+    await p4.addInitScript(() => {
+      const orig = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/.test(type) ? null : orig.call(this, type, ...rest); };
+    });
+    await p4.goto(BASE, { waitUntil: 'networkidle' });
+    await p4.evaluate(() => {
+      window.__aicare.store.update((d) => { d.settings.onboardingDone = true; d.settings.assistant = { gender: 'female', name: 'Clara' }; });
+      document.querySelector('.onboarding')?.remove();
+    });
+    await p4.waitForSelector('.avatar-host[data-avatar="svg"] .avatar-stage');
+    assert.match(await p4.textContent('.stage-note'), /Avatar ilustrado/);
+    await ctx4.close();
   });
 
   await step('nenhum erro de JavaScript durante o teste', async () => {

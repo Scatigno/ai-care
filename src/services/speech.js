@@ -107,7 +107,7 @@ export function createSpeech() {
 
   // Fala o texto. onEnd é chamado também por tempo estimado, porque o
   // Safari às vezes não dispara o evento "end".
-  function speak(text, { gender = 'female', rate = 1, onStart, onEnd } = {}) {
+  function speak(text, { gender = 'female', rate = 1, onStart, onEnd, onBoundary } = {}) {
     if (!synth || !globalThis.SpeechSynthesisUtterance || !text) {
       onEnd?.();
       return false;
@@ -129,6 +129,8 @@ export function createSpeech() {
     const estimate = Math.min(60_000, 1500 + (text.length / 13) * (1000 / rate));
     const timer = setTimeout(finish, estimate + 2500);
     utter.onstart = () => onStart?.();
+    // Início de cada palavra (quando o navegador informa): usado pela boca do avatar.
+    utter.onboundary = (e) => { if (e.name !== 'sentence') onBoundary?.(e.charIndex); };
     utter.onend = finish;
     utter.onerror = finish;
     try {
