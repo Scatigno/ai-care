@@ -49,6 +49,19 @@ const damp = (cur, target, lambda, dt) => cur + (target - cur) * (1 - Math.exp(-
 // Ruído suave (soma de senos) para movimentos ociosos.
 const wave = (t, seed) => Math.sin(t * 0.31 + seed) * 0.6 + Math.sin(t * 0.73 + seed * 2.1) * 0.3 + Math.sin(t * 1.37 + seed * 3.7) * 0.1;
 
+// O Artifact do claude.ai não serve arquivos .glb; lá o modelo vai em um
+// .json com o binário em base64 (gerado por scripts/build.mjs).
+async function loadGltf(dir) {
+  if (document.documentElement.dataset.build !== 'artifact') return gltfLoader().loadAsync(`${dir}model.glb`);
+  const res = await fetch(`${dir}model.glb.json`);
+  if (!res.ok) throw new Error(`model.glb.json: HTTP ${res.status}`);
+  const { b64 } = await res.json();
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return gltfLoader().parseAsync(bytes.buffer, dir);
+}
+
 async function loadModel(base, id, maxAniso) {
   const dir = `${base}${id}/`;
   const tex = new THREE.TextureLoader();
@@ -58,7 +71,7 @@ async function loadModel(base, id, maxAniso) {
     return t;
   });
   const [gltf, head, body, headN, bodyN, hair] = await Promise.all([
-    gltfLoader().loadAsync(`${dir}model.glb`),
+    loadGltf(dir),
     load('head.jpg', true), load('body.jpg', true), load('head_n.jpg'), load('body_n.jpg'), load('hair.webp', true),
   ]);
   const root = gltf.scene;

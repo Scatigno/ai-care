@@ -59,6 +59,12 @@ await writeFile(`${root}dist/artifact/ai-care.html`, artifact);
 // Arquivos de apoio do Artifact (publicados ao lado da página).
 await writeFile(`${root}dist/artifact/avatar3d.js`, avatarJs);
 await cp(`${root}public/avatars`, `${root}dist/artifact/public/avatars`, { recursive: true });
+for (const id of ['f002', 'm014']) {
+  const dir = `${root}dist/artifact/public/avatars/${id}`;
+  const glb = await readFile(`${dir}/model.glb`);
+  await writeFile(`${dir}/model.glb.json`, JSON.stringify({ b64: glb.toString('base64') }));
+  await rm(`${dir}/model.glb`);
+}
 
 const kb = (s) => `${(Buffer.byteLength(s) / 1024).toFixed(1)} KB`;
 console.log(`dist/web/app.js ${kb(js)} · avatar3d.js ${kb(avatarJs)} · app.css ${kb(css)} · dist/artifact/ai-care.html ${kb(artifact)}`);
